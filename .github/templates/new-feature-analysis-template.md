@@ -1,105 +1,37 @@
-## 0. Analysis Metadata
+## NEW_FEATURE_ANALYSIS -- Analysis Steps Template
 
--   Analysis Type: NEW_FEATURE_ANALYSIS
--   Classification Confidence:
--   Template Path Used: .github/templates/new-feature-analysis-template.md
--   Repository / Branch:
--   Generated At:
+Purpose: Define the required case-specific research steps for NEW_FEATURE_ANALYSIS.
+Use this with the report output template:
+- .github/templates/new-feature-analysis-report-template.md
 
-## 1. Executive Summary
+## Case-Specific Required Steps
 
--   Proposed Feature:
--   Expected Business Value:
--   Feasibility Summary:
--   Key Risks Identified:
+1. Use-case decomposition
+- Decompose actors, triggers, constraints, and edge cases.
+- Separate functional and non-functional requirements.
 
-## 2. Analysis Type Classification
+2. Architecture insertion-point identification
+- Identify best-fit modules/layers for new behavior.
+- Validate boundary and dependency direction impact.
 
--   Classified As:
--   Classification Reasoning:
--   Alternative Types Considered:
+3. Contract/API/schema delta definition
+- Define new or changed API contracts.
+- Define schema/data model implications and compatibility boundaries.
 
-## 3. Scope Confirmation
+4. Reuse vs new-component decisions
+- Assess reusable components and their limits.
+- Justify where new components are required.
 
--   In Scope:
--   Out of Scope:
--   Assumptions:
--   Scope Limitations:
+5. Migration and backward-compatibility strategy
+- Define migration sequence and compatibility approach.
+- Identify rollout constraints and data transition risks.
 
-## 4. Architecture Overview
+6. Phased implementation planning
+- Provide staged implementation order.
+- Include verification checkpoints per phase.
 
--   Current Architecture Constraints:
--   Candidate Insertion Points:
--   Boundary Considerations:
--   Dependency Considerations:
+## Quality Gates
 
-## 5. Detailed Findings
-
--   Finding ID:
-    -   Location:
-    -   Evidence:
-    -   Observation:
-    -   Impact:
-
-## 6. Risk Matrix
-
-| Risk ID | Category | Severity | Likelihood | Impact | Overall |
-
-## 7. Scalability Evaluation
-
--   Throughput Impact:
--   Resource Footprint:
--   Bottleneck Forecast:
--   Growth Constraints:
-
-## 8. Execution Safety Review
-
--   Transaction Risk:
--   Failure Modes:
--   Data Integrity Risk:
--   Rollback Safety:
-
-## 9. Gap Analysis
-
--   Missing Capabilities:
--   Integration Gaps:
--   Contract Gaps:
-
-## 10. Improvement Roadmap
-
--   Phase 1 - Foundation:
--   Phase 2 - Integration:
--   Phase 3 - Hardening:
-
-## 11. Maturity Classification
-
--   Current Readiness:
--   Justification:
--   Target Readiness:
-
-## 12. Common Research Steps Evidence (from research.agent.md)
-
--   Scope Discovery Evidence:
--   Repository Cartography Evidence:
--   Execution Path Mapping Evidence:
--   Data Path & Transaction Mapping Evidence:
--   Validation/Security/Error Handling Evidence:
--   Evidence Consolidation Notes:
--   Risk & Confidence Assignment Notes:
--   Template Conformance Check:
-
-## 13. Case-Specific Research Steps Evidence (NEW_FEATURE_ANALYSIS)
-
--   Use Case Decomposition:
--   Architecture Insertion Point Identification:
--   Contract/API/Schema Delta Definition:
--   Reusability vs New Component Decision:
--   Migration & Backward Compatibility Strategy:
--   Phased Implementation Planning:
-
-## 14. Knowledge Coverage (Architecture / Patterns / DS / Algorithms)
-
--   Architecture Knowledge Applied:
--   Design Pattern Findings (incl. anti-patterns):
--   Data Structure Fitness Notes:
--   Algorithmic Complexity / Hotspot Notes:
+- Existing components are classified as reusable or insufficient with rationale.
+- Contract changes preserve backward compatibility boundaries or explicitly justify breaks.
+- Rollout sequence minimizes operational and integration risk.

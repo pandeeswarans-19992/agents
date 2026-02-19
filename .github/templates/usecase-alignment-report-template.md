@@ -1,39 +1,109 @@
-## 1. Use Case Interpretation
+## USE_CASE_ALIGNMENT_ANALYSIS -- Report Output Template
 
--   Actor(s):
--   Business Intent:
--   Functional Breakdown:
--   Constraints Identified:
+## 0. Analysis Metadata
 
-## 2. Component Mapping Table
+- Analysis Type: USE_CASE_ALIGNMENT_ANALYSIS
+- Classification Confidence:
+- Template Path Used: .github/templates/usecase-alignment-report-template.md
+- Analysis Steps Template Used: .github/templates/usecase-alignment-analysis-template.md
+- Repository / Branch:
+- Generated At:
 
-| Use Case Behavior \| Code Component \| File Location \| Evidence \|
-Status \|
+## 1. Executive Summary
 
-## 3. Execution Flow Description
+- Subject:
+- Goal:
+- Feasibility / Health Summary:
+- Key Risks:
 
-Trigger → Entry Layer → Business Layer → Infrastructure → Response
+## 2. Analysis Type Classification
 
-## 4. Architecture Identified
+- Classified As:
+- Classification Reasoning:
+- Alternative Types Considered:
 
--   Architecture Type:
--   Evidence:
--   Dependency Observations:
--   Boundary Observations:
+## 3. Scope Confirmation
 
-## 5. Coverage Analysis
+- In Scope:
+- Out of Scope:
+- Assumptions:
+- Scope Limitations:
 
--   Fully Implemented:
--   Partially Implemented:
--   Missing Behaviors:
--   Unexpected Behaviors:
+## 4. Architecture Overview
 
-## 6. Gap Analysis
+- Architecture Style:
+- Key Modules / Layers:
+- Dependency / Boundary Notes:
+- Integration Notes:
 
-Finding ID: Severity: Location: Description: Impact: Recommended
-Remediation:
+## 5. Detailed Findings
 
-## 7. Alignment Score
+- Finding ID:
+	- Location:
+	- Evidence:
+	- Observation:
+	- Impact:
 
--   Overall Alignment Percentage:
--   Confidence Level:
+## 6. Risk Matrix
+
+| Risk ID | Category | Severity | Likelihood | Impact | Overall |
+
+## 7. Scalability Evaluation
+
+- Throughput / Latency Risks:
+- Concurrency Risks:
+- Resource Risks:
+- Growth Constraints:
+
+## 8. Execution Safety Review
+
+- Transaction Safety:
+- Failure Modes:
+- Data Integrity Risk:
+- Rollback / Recovery Readiness:
+
+## 9. Gap Analysis
+
+- Existing Gaps:
+- Root Causes:
+- Impacted Areas:
+- Priority Order:
+
+## 10. Improvement Roadmap
+
+- Immediate Actions:
+- Near-Term Actions:
+- Strategic Actions:
+
+## 11. Maturity Classification
+
+- Current Level:
+- Justification:
+- Target Level:
+
+## 12. Common Research Steps Evidence
+
+- Scope Discovery Evidence:
+- Repository Cartography Evidence:
+- Execution Path Mapping Evidence:
+- Data Path & Transaction Mapping Evidence:
+- Validation/Security/Error Handling Evidence:
+- Evidence Consolidation Notes:
+- Risk & Confidence Assignment Notes:
+- Template Conformance Check:
+
+## 13. Case-Specific Research Steps Evidence (USE_CASE_ALIGNMENT_ANALYSIS)
+
+- Atomic behavior extraction from the use case:
+- Behavior-to-code mapping:
+- Runtime flow verification per behavior:
+- Coverage classification (full/partial/missing/unexpected):
+- Gap severity and impact assessment:
+- Alignment score calculation basis:
+
+## 14. Knowledge Coverage (Architecture / Patterns / DS / Algorithms)
+
+- Architecture Knowledge Applied:
+- Design Pattern Findings (including anti-patterns):
+- Data Structure Fitness Notes:
+- Algorithmic Complexity / Hotspot Notes:
