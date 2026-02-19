@@ -101,11 +101,10 @@ Based on classification, the agent must use the corresponding template
 from the `.github/
 templates/` directory:
 
-CODEBASE_AUDIT → .github/templates/code-base-audit-report-template.md
-NEW_FEATURE_ANALYSIS → .github/templates/new-feature-analysis-report-template.md
-FEATURE_ENHANCEMENT_ANALYSIS → .github/templates/feature-enhancement-report-template.md
-USE_CASE_ALIGNMENT_ANALYSIS → .github/templates/usecase-alignment-report-template.md
-HYBRID_ANALYSIS → Composite Template (Audit + Enhancement)
+CODEBASE_AUDIT → .github/templates/code-base-audit-template.md
+NEW_FEATURE_ANALYSIS → .github/templates/new-feature-analysis-template.md
+FEATURE_ENHANCEMENT_ANALYSIS → .github/templates/feature-enhancement-template.md
+USE_CASE_ALIGNMENT_ANALYSIS → .github/templates/usecase-alignment-template.md
 
 Template selection must be logged in report metadata.
 
@@ -130,6 +129,83 @@ Shallow scanning is prohibited.
 
 ------------------------------------------------------------------------
 
+# 7.1 Common Research Steps (Mandatory for All 4 Analysis Types)
+
+Every analysis type must execute these common steps before case-specific
+steps.
+
+1.  Scope Discovery
+	- Parse user intent, entities, constraints, and expected outputs
+	- Declare explicit in-scope and out-of-scope boundaries
+
+2.  Repository Cartography
+	- Identify modules, layers, entry points, integration points
+	- Build a high-level dependency map
+
+3.  Execution Path Mapping
+	- Trace trigger-to-response flow (API/CLI/event/scheduler)
+	- Identify cross-layer handoffs and side effects
+
+4.  Data Path & Transaction Mapping
+	- Trace read/write paths and state transitions
+	- Identify transaction boundaries and consistency guarantees
+
+5.  Validation, Security & Error Handling Checks
+	- Verify input validation and guard conditions
+	- Verify authn/authz checkpoints (if applicable)
+	- Review exception propagation and failure behavior
+
+6.  Evidence Consolidation
+	- Record file-level and method-level references
+	- Remove weak or duplicate evidence
+
+7.  Risk & Confidence Assignment
+	- Apply severity scale: Low, Medium, High, Critical
+	- Assign classification confidence with rationale
+
+8.  Template Conformance Check
+	- Ensure common and case-specific sections are complete
+	- Mark missing data as "Not Found in Scope" with reason
+
+------------------------------------------------------------------------
+
+# 7.2 Knowledge Framework (Mandatory Analysis Lens)
+
+The agent must include explicit technical knowledge from the following
+domains in every report.
+
+## A. Architecture Knowledge
+
+-   Architecture style detection (layered, hexagonal, clean,
+	event-driven, modular monolith, microservices)
+-   Boundary and dependency direction validation
+-   Cross-cutting concerns (observability, reliability, security)
+
+## B. Design Pattern Knowledge
+
+-   Detect applied patterns (factory, strategy, adapter, repository,
+	mediator, observer, CQRS, etc.)
+-   Detect anti-patterns (god object, tight coupling, cyclic
+	dependencies, anemic domain model where harmful)
+-   Explain where patterns improve or degrade maintainability
+
+## C. Data Structures Knowledge
+
+-   Identify core data structures used in critical flows (array/list,
+	map/hash, set, tree, graph, queue, heap)
+-   Evaluate structure fit for access/update/query behavior
+-   Highlight mutation and memory trade-offs
+
+## D. Algorithms Knowledge
+
+-   Identify algorithmic behavior in critical paths (search/sort,
+	traversal, matching, scheduling, retry/backoff)
+-   Estimate complexity hotspots qualitatively ($O(1)$, $O(n)$,
+	$O(n^2)$, etc., when inferable)
+-   Flag risks from unbounded loops/recursion or expensive operations
+
+------------------------------------------------------------------------
+
 # 8. Mandatory Report Structure
 
 Every generated report must include:
@@ -145,6 +221,8 @@ Every generated report must include:
 9.  Gap Analysis
 10. Improvement Roadmap
 11. Maturity Classification
+12. Common Research Steps Evidence
+13. Case-Specific Research Steps Evidence
 
 # 8.1. Report Output
 
@@ -183,14 +261,14 @@ The agent must:
 
 ------------------------------------------------------------------------
 
-# 11. Hybrid Mode Configuration
+# 11. Analysis Type Execution Contract
 
-HYBRID_ANALYSIS must:
+For each of the 4 analysis types, execution must follow:
 
-1.  Perform full CODEBASE_AUDIT
-2.  Perform FEATURE_ENHANCEMENT_ANALYSIS
-3.  Merge reports into structured composite output
-4.  Maintain traceability between sections
+1.  Execute all Common Research Steps from Section 7.1
+2.  Execute analysis-type specific steps from the selected template
+3.  Record evidence for both common and case-specific steps
+4.  Produce final report using only the selected template
 
 ------------------------------------------------------------------------
 
