@@ -1,101 +1,112 @@
 # agents
 
-Prompt assets for Copilot custom agents with separate analysis-step templates and report-output templates.
+Reusable custom-agent assets for repository research and structured reporting.
 
-## Structure
+This repository follows a split-template model:
+- `*-analysis-template.md` = required execution steps
+- `*-report-template.md` = report output format
 
-- `.github/agents/research.agent.md`: main research-agent operating specification
-- `.github/docs/*.guide.md`: per-agent implementation guides (`<agent>.guide.md`)
-- `.github/templates/*-analysis-template.md`: required case-specific analysis steps
-- `.github/templates/*-report-template.md`: final report output structure
+Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 
-## Agent + Guide Convention
+## Repository Layout
 
-For every new agent, add both files:
+- `.github/agents/`
+  - agent definitions (`*.agent.md`)
+- `.github/docs/`
+  - per-agent guides (`*.guide.md`)
+- `.github/templates/`
+  - analysis templates (`*-analysis-template.md`)
+  - report templates (`*-report-template.md`)
 
-1. `.github/agents/<agent>.agent.md`
-2. `.github/docs/<agent>.guide.md`
+## Add a New Agent
 
-`<agent>.guide.md` must include:
-- scope and responsibilities
-- input checklist
-- common workflow expectations
-- template mapping
-- quality gates and escalation rules
+1. Create agent file:
+	- `.github/agents/<agent>.agent.md`
+2. Create guide file:
+	- `.github/docs/<agent>.guide.md`
+3. Add or reuse template pair:
+	- `.github/templates/<type>-analysis-template.md`
+	- `.github/templates/<type>-report-template.md`
+4. Add template mapping inside the agent file.
+5. Run one dry execution and verify evidence + output sections.
 
-## Create More Agents
+## Use This Repo in Existing Projects
 
-Use this repository as the source for additional specialized agents (security, performance, migration, API governance, etc.).
-
-1. Create `.github/agents/<agent>.agent.md`.
-2. Create `.github/docs/<agent>.guide.md`.
-3. Define agent contract clearly:
-   - mission and scope
-   - supported analysis modes
-   - required inputs
-   - common workflow and quality gates
-   - evidence and determinism rules
-4. Choose or create template pairs:
-   - `*-analysis-template.md` for required execution steps
-   - `*-report-template.md` for final output format
-5. Add template mapping in the agent file.
-6. Run one dry analysis and verify output sections and evidence quality.
-
-
-## Authoring Rule
-
-When updating analysis procedure, change only the relevant `*-analysis-template.md` file.
-When updating report layout/fields, change only the relevant `*-report-template.md` file.
-
-## Clone and Use in Existing Projects
-
-Recommended approach: pull this repository into the target project root, then configure your IDE to use the agent files.
-
-### Option A: Clone into project root (your suggested flow)
+### Option A (recommended): Clone into project root
 
 From target project root:
 
-1. `git clone <this-repo-url> agents`
-2. Keep files at:
-	 - `agents/.github/agents/`
-	 - `agents/.github/docs/`
-	 - `agents/.github/templates/`
-3. Configure IDE custom-agent settings to point to the agent file(s), for example:
-	 - `agents/.github/agents/research.agent.md`
-4. Verify template paths in agent files are resolvable from your IDE/project context.
+1. `git clone <repo-url> agents`
+2. Keep paths unchanged:
+	- `agents/.github/agents/`
+	- `agents/.github/docs/`
+	- `agents/.github/templates/`
+3. Point your IDE custom-agent configuration to the required agent file.
 
-### Option B: Copy into target repository `.github/`
+### Option B: Copy into target project `.github/`
 
-1. Copy required files into target repo:
-	 - `.github/agents/*.agent.md`
-	 - `.github/docs/*.guide.md`
-	 - `.github/templates/*-analysis-template.md`
-	 - `.github/templates/*-report-template.md`
-2. Keep relative paths unchanged.
-3. Run a dry analysis to verify classification, template selection, and output structure.
+1. Copy folders into target repository:
+	- `.github/agents/`
+	- `.github/docs/`
+	- `.github/templates/`
+2. Keep relative paths unchanged so template mappings remain valid.
 
-## IDE Configuration Notes
+## IDE Configuration (Detailed)
 
-Exact menus can differ by plugin/version. Use your IDE's custom-agent or prompt-file configuration to register the agent markdown files.
+Menu names differ by IDE version/plugin. Use the steps below as a practical checklist.
 
-- VS Code:
-	- Open Copilot/agent settings.
-	- Add agent file path(s), for example `agents/.github/agents/research.agent.md`.
-	- Ensure workspace trust and file access permissions are enabled.
+### VS Code (GitHub Copilot)
 
-- IntelliJ IDEA:
-	- Open GitHub Copilot plugin settings.
-	- Register custom prompt/agent file path(s).
-	- Confirm project root path resolution for template references.
+1. Open the target workspace.
+2. Ensure workspace is trusted.
+3. Open GitHub Copilot settings.
+4. Add/register the agent instruction file path, for example:
+	- `agents/.github/agents/research.agent.md`
+5. Confirm referenced templates are accessible from the same workspace:
+	- `agents/.github/templates/*.md`
+6. Run a test request and verify report output path is created.
 
-- Eclipse:
-	- Open Copilot/plugin preferences.
-	- Configure custom instruction/agent file locations.
-	- Validate relative path access to templates and docs.
+Validation checklist:
+- Agent loads without path errors.
+- Analysis/report templates are resolved.
+- Output appears under `ai-research-report/`.
 
-## Recommended Rollout Pattern
+### IntelliJ IDEA (GitHub Copilot plugin)
 
-- Phase 1: Add `research.agent.md` + `research.guide.md` + existing 4 template pairs.
-- Phase 2: Add one new specialized agent (for example, security review).
-- Phase 3: Standardize metadata and output location across all agents.
-- Phase 4: Add CI checks for template path integrity and required sections.
+1. Open project and enable GitHub Copilot plugin.
+2. Open plugin settings / custom instructions area.
+3. Register agent file path, for example:
+	- `agents/.github/agents/research.agent.md`
+4. Ensure project root includes the cloned `agents` folder (or copied `.github` paths).
+5. Run a sample prompt and confirm template references resolve.
+
+Validation checklist:
+- No unresolved template-path warnings.
+- Agent behavior follows selected analysis type.
+- Report is written to expected output folder.
+
+### Eclipse (Copilot-compatible plugin)
+
+1. Install and enable the Copilot/custom prompt plugin.
+2. Open Preferences for the plugin.
+3. Set instruction/agent file location to:
+	- `agents/.github/agents/research.agent.md`
+4. Verify plugin has workspace file read access.
+5. Execute a sample analysis and verify report generation.
+
+Validation checklist:
+- Agent file is read successfully.
+- Templates are reachable from configured root.
+- Output file is generated under `ai-research-report/`.
+
+## Troubleshooting
+
+- Template not found:
+  - Check relative paths in agent mapping.
+  - Ensure clone/copy path matches README examples.
+- Agent loads but output is incomplete:
+  - Verify both template types exist (`analysis` + `report`).
+  - Ensure request includes clear scope and expected output.
+- Report not generated:
+  - Confirm write permissions in project root.
+  - Check whether `ai-research-report/` is ignored or blocked by tooling.
