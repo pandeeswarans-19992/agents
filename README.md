@@ -3,9 +3,11 @@
 Reusable custom-agent assets for repository research and structured reporting.
 
 This repository follows a split-template model:
+- `*-input-template.md` = standard request input format
 - `*-analysis-template.md` = required execution steps
 - `*-report-template.md` = report output format
 
+Shared knowledge that all agents rely on lives in [.github/knowledge](.github/knowledge).
 Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 
 ## Repository Layout
@@ -14,7 +16,14 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
   - agent definitions (`*.agent.md`)
 - `.github/docs/`
   - per-agent guides (`*.guide.md`)
+- `.github/knowledge/`
+  - shared knowledge files loaded by all agents:
+    - `common-knowledge.md` – architecture principles, security baseline, evidence rules
+    - `platform-knowledge.md` – runtime, framework, infrastructure, integration points
+    - `module-knowledge.md` – module inventory, dependency map, inter-module contracts
+    - `field-knowledge.md` – domain glossary, business rules, data field definitions
 - `.github/templates/`
+  - input templates (`*-input-template.md`)
   - analysis templates (`*-analysis-template.md`)
   - report templates (`*-report-template.md`)
 
@@ -24,11 +33,18 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 	- `.github/agents/<agent>.agent.md`
 2. Create guide file:
 	- `.github/docs/<agent>.guide.md`
-3. Add or reuse template pair:
+3. Add or reuse input template:
+	- `.github/templates/<type>-input-template.md`
+4. Add or reuse analysis/report template pair:
 	- `.github/templates/<type>-analysis-template.md`
 	- `.github/templates/<type>-report-template.md`
-4. Add template mapping inside the agent file.
-5. Run one dry execution and verify evidence + output sections.
+5. Reference knowledge files inside the agent (do not duplicate their content):
+	- `.github/knowledge/common-knowledge.md`
+	- `.github/knowledge/platform-knowledge.md`
+	- `.github/knowledge/module-knowledge.md`
+	- `.github/knowledge/field-knowledge.md`
+6. Add template and knowledge mappings inside the agent file.
+7. Run one dry execution and verify evidence + output sections.
 
 ## Use This Repo in Existing Projects
 
@@ -40,6 +56,7 @@ From target project root:
 2. Keep paths unchanged:
 	- `agents/.github/agents/`
 	- `agents/.github/docs/`
+	- `agents/.github/knowledge/`
 	- `agents/.github/templates/`
 3. Point your IDE custom-agent configuration to the required agent file.
 
@@ -48,8 +65,9 @@ From target project root:
 1. Copy folders into target repository:
 	- `.github/agents/`
 	- `.github/docs/`
+	- `.github/knowledge/`
 	- `.github/templates/`
-2. Keep relative paths unchanged so template mappings remain valid.
+2. Keep relative paths unchanged so template and knowledge mappings remain valid.
 
 ## IDE Configuration (Detailed)
 
@@ -62,12 +80,14 @@ Menu names differ by IDE version/plugin. Use the steps below as a practical chec
 3. Open GitHub Copilot settings.
 4. Add/register the agent instruction file path, for example:
 	- `agents/.github/agents/research.agent.md`
-5. Confirm referenced templates are accessible from the same workspace:
+5. Confirm referenced templates and knowledge files are accessible from the same workspace:
 	- `agents/.github/templates/*.md`
+	- `agents/.github/knowledge/*.md`
 6. Run a test request and verify report output path is created.
 
 Validation checklist:
 - Agent loads without path errors.
+- Knowledge files are resolved and applied.
 - Analysis/report templates are resolved.
 - Output appears under `ai-research-report/`.
 
@@ -81,7 +101,7 @@ Validation checklist:
 5. Run a sample prompt and confirm template references resolve.
 
 Validation checklist:
-- No unresolved template-path warnings.
+- No unresolved template-path or knowledge-path warnings.
 - Agent behavior follows selected analysis type.
 - Report is written to expected output folder.
 
