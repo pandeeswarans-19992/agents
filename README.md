@@ -33,8 +33,8 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 	- `.github/agents/<agent>.agent.md`
 2. Create guide file:
 	- `.github/docs/<agent>.guide.md`
-3. Add or reuse input template:
-	- `.github/templates/<type>-input-template.md`
+3. Add or reuse input template (per agent, typically shared across analysis types):
+	- `.github/templates/<agent>-input-template.md`
 4. Add or reuse analysis/report template pair:
 	- `.github/templates/<type>-analysis-template.md`
 	- `.github/templates/<type>-report-template.md`
