@@ -55,9 +55,9 @@ If confidence is below 0.75, ask for clarification or state ambiguity in the rep
 
 Use three template categories for each analysis type:
 
-1. `input-template.md` -> defines the standard request input format.
-2. `report-template.md` -> defines the report output structure.
-3. `analysis-template.md` -> defines required case-specific analysis steps.
+1. `*-input-template.md` -> defines the standard request input format.
+2. `*-report-template.md` -> defines the report output structure.
+3. `*-analysis-template.md` -> defines required case-specific analysis steps.
 
 The agent must accept input structured according to the input template,
 execute case-specific steps from the analysis template,
