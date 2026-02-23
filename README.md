@@ -3,7 +3,7 @@
 Reusable custom-agent assets for repository research and structured reporting.
 
 This repository follows a split-template model:
-- `*-input-template.md` = standard request input format
+- `*-input-template.md` = type-specific request input format (one per analysis type)
 - `*-analysis-template.md` = required execution steps
 - `*-report-template.md` = report output format
 
@@ -23,7 +23,7 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
     - `module-knowledge.md` – module inventory, dependency map, inter-module contracts
     - `field-knowledge.md` – domain glossary, business rules, data field definitions
 - `.github/templates/`
-  - input templates (`*-input-template.md`)
+  - input templates (`*-input-template.md`) – one per analysis type plus a generic fallback
   - analysis templates (`*-analysis-template.md`)
   - report templates (`*-report-template.md`)
 
@@ -33,8 +33,12 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 	- `.github/agents/<agent>.agent.md`
 2. Create guide file:
 	- `.github/docs/<agent>.guide.md`
-3. Add or reuse input template (per agent, typically shared across analysis types):
-	- `.github/templates/<agent>-input-template.md`
+3. Add or reuse input template (one per analysis type):
+	- `.github/templates/code-base-audit-input-template.md`
+	- `.github/templates/new-feature-analysis-input-template.md`
+	- `.github/templates/feature-enhancement-input-template.md`
+	- `.github/templates/usecase-alignment-input-template.md`
+	- `.github/templates/research-input-template.md` (generic fallback)
 4. Add or reuse analysis/report template pair:
 	- `.github/templates/<type>-analysis-template.md`
 	- `.github/templates/<type>-report-template.md`

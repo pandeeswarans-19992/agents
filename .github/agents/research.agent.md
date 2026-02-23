@@ -65,7 +65,14 @@ then produce final output using the report template.
 
 ### 6.0 Request Input Template
 
-- ALL analysis types -> `.github/templates/research-input-template.md`
+Each analysis type has its own input template with type-specific fields.
+Use the generic template only when the analysis type is not yet known.
+
+- CODEBASE_AUDIT            -> `.github/templates/code-base-audit-input-template.md`
+- NEW_FEATURE_ANALYSIS      -> `.github/templates/new-feature-analysis-input-template.md`
+- FEATURE_ENHANCEMENT_ANALYSIS -> `.github/templates/feature-enhancement-input-template.md`
+- USE_CASE_ALIGNMENT_ANALYSIS  -> `.github/templates/usecase-alignment-input-template.md`
+- Generic / unknown type    -> `.github/templates/research-input-template.md`
 
 ### 6.1 Report Output Template Map
 
