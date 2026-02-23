@@ -1,7 +1,7 @@
 # Platform Knowledge
 
 Purpose: Capture runtime, language, framework, and infrastructure knowledge
-that agents must apply when analysing or designing for this platform.
+that agents must apply when analyzing or designing for this platform.
 Update this file whenever the platform stack changes.
 
 ## Runtime and Language
