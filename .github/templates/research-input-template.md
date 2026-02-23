@@ -83,8 +83,3 @@ Expected Output: behavior-to-code mapping, coverage gaps, alignment score
 
 ---
 
-## Output Location
-
-Generated reports are saved at:
-
-`ai-research-report/<feature-name>/<report-name>_v<version-number>.md`
