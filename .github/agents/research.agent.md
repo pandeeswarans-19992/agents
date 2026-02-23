@@ -53,13 +53,19 @@ If confidence is below 0.75, ask for clarification or state ambiguity in the rep
 
 ### 6. Template Selection (De-duplicated)
 
-Use two template categories for each analysis type:
+Use three template categories for each analysis type:
 
-1. `report-template.md` -> defines the report output structure.
-2. `analysis-template.md` -> defines required case-specific analysis steps.
+1. `*-input-template.md` -> defines the standard request input format.
+2. `*-report-template.md` -> defines the report output structure.
+3. `*-analysis-template.md` -> defines required case-specific analysis steps.
 
-The agent must execute case-specific steps from the analysis template,
+The agent must accept input structured according to the input template,
+execute case-specific steps from the analysis template,
 then produce final output using the report template.
+
+### 6.0 Request Input Template
+
+- ALL analysis types -> `.github/templates/research-input-template.md`
 
 ### 6.1 Report Output Template Map
 
@@ -116,6 +122,19 @@ Run these steps before case-specific analysis:
 Shallow scanning is not allowed.
 
 ### 8. Knowledge Lens (Must Be Applied)
+
+Load and apply the following shared knowledge files before beginning any analysis.
+These files are the single source of truth for shared context; do not duplicate their content
+inside the agent or individual templates.
+
+- Common knowledge (architecture principles, security baseline, evidence rules):
+  `.github/knowledge/common-knowledge.md`
+- Platform knowledge (runtime, framework, infrastructure, integration points):
+  `.github/knowledge/platform-knowledge.md`
+- Module knowledge (module inventory, dependency map, inter-module contracts):
+  `.github/knowledge/module-knowledge.md`
+- Field knowledge (domain glossary, business rules, data field definitions, state machines):
+  `.github/knowledge/field-knowledge.md`
 
 For every report, include evidence from:
 
