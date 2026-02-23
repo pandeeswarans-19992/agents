@@ -1,151 +1,81 @@
 # Research Agent Guide
 
-Input suggestion guide for `.github/agents/research.agent.md`.
-This file is intentionally focused on **better input format only**.
-
-## 1) Best Input Format
-
-Each analysis type has its own input template with type-specific fields.
-Use the template that matches your intended analysis type:
-
-| Analysis Type | Input Template |
-|---|---|
-| CODEBASE_AUDIT | `.github/templates/code-base-audit-input-template.md` |
-| NEW_FEATURE_ANALYSIS | `.github/templates/new-feature-analysis-input-template.md` |
-| FEATURE_ENHANCEMENT_ANALYSIS | `.github/templates/feature-enhancement-input-template.md` |
-| USE_CASE_ALIGNMENT_ANALYSIS | `.github/templates/usecase-alignment-input-template.md` |
-| Unknown / auto-classify | `.github/templates/research-input-template.md` |
-
-Open the matching template, fill in the required fields, and paste the completed form as your request.
+Example user queries for `.github/agents/research.agent.md`.
+This guide shows how to phrase requests to get the best output from the research agent.
 
 ---
 
-## 2) CODEBASE_AUDIT Input
+## CODEBASE_AUDIT -- Example Queries
 
-Key fields beyond the common set:
+### Deprecation review
 
-- **Specific Files / Methods** – files or method signatures to focus on
-- **Change Intent** – DEPRECATION | MODIFICATION | CLEANUP | UNIFICATION | DISCOVERY_ONLY
-- **Audit Focus** – ARCHITECTURE | SECURITY | PERFORMANCE | MAINTAINABILITY | ALL
-- **Known Risk Areas** – suspected hot spots
+> "Audit `src/payments` for deprecated API methods. I need to know which methods are still called, by whom, and in what order they can be safely removed."
 
-Example:
+> "Find all dead code and unused dependencies in the order-processing module. Flag anything that blocks a future cleanup."
 
-Goal: Audit payment module for deprecated patterns and circular dependencies.
-Feature / Use Case Name: payments-deprecation-cleanup
-Scope In: `src/payments`
-Specific Files / Methods: `src/payments/legacy-api.js`
-Change Intent: DEPRECATION
-Audit Focus: ARCHITECTURE, MAINTAINABILITY
-Expected Output: deprecated symbol inventory, call-site impact map, removal sequence
+### Architecture review
 
----
+> "Give me a full architecture audit of `src/orders` and `src/payments`. I'm looking for circular dependencies, tight coupling, and scalability bottlenecks. Output a risk matrix and a recommended refactor order."
 
-## 3) NEW_FEATURE_ANALYSIS Input
+### Security-focused audit
 
-Key fields beyond the common set:
+> "Audit the authentication module for security vulnerabilities, unvalidated inputs, and missing error handling. I need a severity-ranked list with file and line evidence."
 
-- **Use Case Document / Requirements** – inline text or file path
-- **Target Modules / Layers** – where the feature should land
-- **API Contracts** – contracts to conform to or extend
-- **Schema / Data Model Constraints** – relevant tables or boundaries
-- **Backward Compatibility Requirements** – what must not break
+### Unification feasibility
 
-Example:
-
-Goal: Analyze implementation strategy for bulk invoice export.
-Feature / Use Case Name: bulk-invoice-export
-Use Case Document / Requirements: docs/use-cases/bulk-export.md
-Target Modules / Layers: `src/invoice`, `src/reporting`
-Known Files / Modules: `api/openapi.yaml`
-Backward Compatibility Requirements: Keep backward compatibility for current invoice APIs.
-Expected Output: architecture insertion points, API/schema delta, phased plan
+> "We have two notification service implementations under `src/notifications/v1` and `src/notifications/v2`. Assess whether they can be merged and what the risks are."
 
 ---
 
-## 4) FEATURE_ENHANCEMENT_ANALYSIS Input
+## NEW_FEATURE_ANALYSIS -- Example Queries
 
-Key fields beyond the common set:
+> "Analyze how to add bulk invoice export to the system. Jobs must be async, support CSV and PDF, and notify users by email. I need the best insertion points, any API or schema changes, and a phased plan."
 
-- **Enhancement Type** – DEPRECATION | MODIFICATION | CLEANUP | UNIFICATION
-- **Specific Files / Methods** – primary targets of the change
-- **Current Behavior** – what the code does today
-- **Desired Change** – what it should do after the enhancement
-- **Migration Constraints** – e.g. no schema breaking change, must be feature-flagged
-- **Rollback Requirements** – what a safe rollback looks like
+> "We want to add multi-factor authentication for admin users using TOTP. Where should it live in the current architecture? What schema changes are needed? Keep existing sessions valid."
 
-Example:
-
-Goal: Improve retry behavior in payment capture flow.
-Feature / Use Case Name: payment-capture-retry
-Enhancement Type: MODIFICATION
-Specific Files / Methods: `src/payments/capture.js::processCapture`
-Scope In: `src/payments/capture*`, queue workers
-Current Behavior: Retries up to 3 times with fixed 1 s delay; no dead-letter queue.
-Desired Change: Exponential back-off, max 5 retries, DLQ on final failure.
-Migration Constraints: No schema breaking change; must be feature-flagged.
-Rollback Requirements: Disable feature flag reverts to current behavior without data loss.
-Expected Output: impact surface, regression risks, rollback strategy
+> "Plan the implementation of a real-time stock reservation feature at checkout. It must integrate with the existing order and payment flows without breaking backward compatibility."
 
 ---
 
-## 5) USE_CASE_ALIGNMENT_ANALYSIS Input
+## FEATURE_ENHANCEMENT_ANALYSIS -- Example Queries
 
-Key fields beyond the common set:
+### Modification
 
-- **Use Case Document** – inline text or file path
-- **Specific Behaviors to Verify** – individual expected behaviors (optional; agent extracts from doc if omitted)
-- **Compliance / Audit Requirements** – regulatory or internal compliance needs
-- **Coverage Threshold** – minimum acceptable alignment score
+> "The payment capture retry logic retries 3 times with a fixed 1-second delay and has no dead-letter queue. I want exponential back-off, 5 retries max, and a DLQ on final failure — behind a feature flag. Give me the impact surface and a rollback strategy."
 
-Example:
+> "Improve the search API to support pagination and sorting. It currently returns all results at once. Show me what changes and what regression risks exist."
 
-Goal: Verify password-reset flow against use case document.
-Feature / Use Case Name: password-reset
-Use Case Document: docs/use-cases/password-reset.md
-Specific Behaviors to Verify:
-  - Token must expire after 15 minutes.
-  - Reset link must be single-use.
-Known Implementation Files: `src/auth`, `src/notification`
-Compliance / Audit Requirements: Compliance and audit logging required.
-Expected Output: behavior-to-code mapping, coverage gaps, alignment score
+### Cleanup
+
+> "Remove all code paths guarded by feature flags `LEGACY_CHECKOUT_V1` and `OLD_PRICING_ENGINE` — both flags have been permanently disabled. Identify all affected files and give me a safe deletion sequence."
+
+### Deprecation removal
+
+> "The synchronous payment endpoint in `src/api/v1/payment.js` is still active but should be replaced by the async flow. Map all its callers, plan their migration, and then show how to safely remove the sync path."
 
 ---
 
-## 6) Input Quality Checklist
+## USE_CASE_ALIGNMENT_ANALYSIS -- Example Queries
 
-Before sending a request, ensure:
+> "Verify the password-reset flow against our use case doc at `docs/use-cases/password-reset.md`. I specifically want to confirm: token expiry after 15 minutes, single-use links, and failed-attempt logging. We require full audit logging."
 
-- You select and fill the template matching your analysis type.
-- You state one clear goal.
-- You mention feature/use-case name.
-- You provide at least one scope/module hint.
-- You include constraints (if any).
-- You specify expected output.
+> "Check whether the checkout flow in `src/checkout` matches the use case spec below. I need a behavior-to-code mapping, a gap list with severity, and an alignment score. [paste use case here]"
+
+> "Validate the admin MFA flow against OWASP ASVS Level 2. Map each requirement to the code that satisfies it and flag anything that is missing or only partially covered."
 
 ---
 
-## 7) Good vs Weak Input
+## Tips for Better Queries
 
-### Weak
-
-"Analyze this project."
-
-### Good
-
-"Run FEATURE_ENHANCEMENT_ANALYSIS for payment-capture-retry. Enhancement Type: MODIFICATION. Specific Files: `src/payments/capture.js`. Scope in `src/payments` and queue workers, scope out UI. Current behavior: fixed retry delay, no DLQ. Desired change: exponential back-off with DLQ. Must keep backward compatibility and no schema breaking changes. Output risk matrix, rollback strategy, and phased roadmap."
+- **Name the feature**: include a short kebab-case name so the agent can name the output folder correctly (e.g. `payment-capture-retry`).
+- **Be specific about files or methods**: the more precise the scope, the deeper and more accurate the analysis.
+- **State the change intent**: DEPRECATION, MODIFICATION, CLEANUP, or UNIFICATION helps the agent focus its analysis.
+- **Include constraints**: "no schema breaking change", "must be feature-flagged", "zero downtime" all have direct impact on the recommendations.
+- **Specify the output you need**: risk matrix, phased plan, rollback strategy, alignment score — tell the agent what you want.
 
 ---
 
-## 8) Clarification Prompt (If Unsure)
-
-If you are unsure about analysis type, use:
-
-"Classify this request first, explain confidence, then proceed with analysis using the correct templates."
-
----
-
-## 9) Where to Check the Report
+## Where to Check the Report
 
 Generated reports are saved at:
 
@@ -156,7 +86,3 @@ Examples:
 - `ai-research-report/payment-capture-retry/feature-enhancement-analysis_v1.md`
 - `ai-research-report/password-reset/usecase-alignment-analysis_v2.md`
 
-Quick checks:
-
-- Open the `ai-research-report/` folder in your project root.
-- Open the latest version file (`_v2`, `_v3`, etc.) for your feature.

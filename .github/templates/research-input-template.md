@@ -35,18 +35,6 @@ Reference: .github/agents/research.agent.md
 
 ---
 
-## Knowledge References
-
-The agent will automatically load the following shared knowledge files.
-You do not need to duplicate this information in your request.
-
-- Common knowledge:   .github/knowledge/common-knowledge.md
-- Platform knowledge: .github/knowledge/platform-knowledge.md
-- Module knowledge:   .github/knowledge/module-knowledge.md
-- Field knowledge:    .github/knowledge/field-knowledge.md
-
----
-
 ## Minimal Input Examples by Analysis Type
 
 ### CODEBASE_AUDIT

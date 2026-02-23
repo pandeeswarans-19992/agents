@@ -13,6 +13,7 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 ## Repository Layout
 
 - `.github/agents/`
+  - `base.agent.md` – shared base contract (knowledge lens, governance, escalation rules)
   - agent definitions (`*.agent.md`)
 - `.github/docs/`
   - per-agent guides (`*.guide.md`)
@@ -33,21 +34,14 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 	- `.github/agents/<agent>.agent.md`
 2. Create guide file:
 	- `.github/docs/<agent>.guide.md`
-3. Add or reuse input template (one per analysis type):
-	- `.github/templates/code-base-audit-input-template.md`
-	- `.github/templates/new-feature-analysis-input-template.md`
-	- `.github/templates/feature-enhancement-input-template.md`
-	- `.github/templates/usecase-alignment-input-template.md`
-	- `.github/templates/research-input-template.md` (generic fallback)
+3. Add or reuse input template (per agent, per analysis type):
+	- `.github/templates/<type>-input-template.md`
 4. Add or reuse analysis/report template pair:
 	- `.github/templates/<type>-analysis-template.md`
 	- `.github/templates/<type>-report-template.md`
-5. Reference knowledge files inside the agent (do not duplicate their content):
-	- `.github/knowledge/common-knowledge.md`
-	- `.github/knowledge/platform-knowledge.md`
-	- `.github/knowledge/module-knowledge.md`
-	- `.github/knowledge/field-knowledge.md`
-6. Add template and knowledge mappings inside the agent file.
+5. Load the base agent contract (knowledge lens, governance, escalation rules) at the start of the agent file:
+	- `.github/agents/base.agent.md`
+6. Add template mappings inside the agent file.
 7. Run one dry execution and verify evidence + output sections.
 
 ## Use This Repo in Existing Projects
