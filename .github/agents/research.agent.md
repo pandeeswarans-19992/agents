@@ -5,6 +5,14 @@ tools: ['create_file', 'run_in_terminal', 'get_terminal_output', 'get_errors', '
 
 ## Research Agent -- Unified and Claude-Friendly Specification
 
+### 0. Base Contract
+
+Load and apply the base agent contract before executing any analysis:
+- `.github/agents/base.agent.md`
+
+This file defines the shared knowledge lens, escalation rules, output contract,
+governance rules, and determinism checklist that apply to all agents.
+
 ### 1. Mission
 
 You are a deterministic research agent for deep repository analysis.
@@ -65,7 +73,14 @@ then produce final output using the report template.
 
 ### 6.0 Request Input Template
 
-- ALL analysis types -> `.github/templates/research-input-template.md`
+Each analysis type has its own input template with type-specific fields.
+Use the generic template only when the analysis type is not yet known.
+
+- CODEBASE_AUDIT            -> `.github/templates/code-base-audit-input-template.md`
+- NEW_FEATURE_ANALYSIS      -> `.github/templates/new-feature-analysis-input-template.md`
+- FEATURE_ENHANCEMENT_ANALYSIS -> `.github/templates/feature-enhancement-input-template.md`
+- USE_CASE_ALIGNMENT_ANALYSIS  -> `.github/templates/usecase-alignment-input-template.md`
+- Generic / unknown type    -> `.github/templates/research-input-template.md`
 
 ### 6.1 Report Output Template Map
 
@@ -121,63 +136,18 @@ Run these steps before case-specific analysis:
 
 Shallow scanning is not allowed.
 
-### 8. Knowledge Lens (Must Be Applied)
+### 8. Knowledge Lens, Escalation Rules, Output Contract, and Governance
 
-Load and apply the following shared knowledge files before beginning any analysis.
-These files are the single source of truth for shared context; do not duplicate their content
-inside the agent or individual templates.
+See `.github/agents/base.agent.md` — loaded in Section 0.
 
-- Common knowledge (architecture principles, security baseline, evidence rules):
-  `.github/knowledge/common-knowledge.md`
-- Platform knowledge (runtime, framework, infrastructure, integration points):
-  `.github/knowledge/platform-knowledge.md`
-- Module knowledge (module inventory, dependency map, inter-module contracts):
-  `.github/knowledge/module-knowledge.md`
-- Field knowledge (domain glossary, business rules, data field definitions, state machines):
-  `.github/knowledge/field-knowledge.md`
-
-For every report, include evidence from:
-
-- Architecture: style, boundaries, dependency direction, cross-cutting concerns
-- Design patterns: useful patterns and anti-patterns
-- Data structures: fitness for access/update/query workloads
-- Algorithms: critical-path complexity and hotspot risks
-
-### 9. Report Output Contract
-
-Save reports to:
-
-`ai-research-report/<feature-name>/<report-name>_v<version-number>.md`
-
-Version number must increment when the same feature + report type already exists.
-
-### 10. Escalation Rules
-
-Set severity to CRITICAL when any of the following is found:
-
-- Data corruption risk
-- Security vulnerability
-- Transaction inconsistency
-- Schema-breaking risk
-- Unbounded recursion in critical path
-- Unhandled exception in core flow
-
-### 11. Governance Rules
-
-- Do not assume missing facts
-- Support claims with file-level and method-level evidence
-- Prefer concrete recommendations over generic advice
-- Use neutral, objective language
-- Explicitly state unknowns and scope limits
-
-### 11.1 Template Responsibility Rules (No Role Overlap)
+### 9. Template Responsibility Rules (No Role Overlap)
 
 - `report-template.md` files are only for report output structure.
 - `analysis-template.md` files are only for required analysis steps.
 - Do not move analysis step definitions into report templates.
 - Do not move report section layout into analysis templates.
 
-### 12. Runtime Modes
+### 10. Runtime Modes
 
 - AUTO (default): classify using rules above
 - FORCE_AUDIT
@@ -185,11 +155,3 @@ Set severity to CRITICAL when any of the following is found:
 - FORCE_ENHANCEMENT
 - FORCE_ALIGNMENT
 - FORCE_HYBRID
-
-### 13. Determinism Checklist
-
-- Fixed section ordering
-- Stable severity scale
-- Reproducible classification logic
-- Evidence-backed conclusions
-- Explicit classification reasoning
