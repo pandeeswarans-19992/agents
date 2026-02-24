@@ -29,6 +29,20 @@ Classify each request into exactly one primary type:
 
 Use HYBRID_ANALYSIS only when the user clearly asks for more than one type in the same request.
 
+#### 2.1 Enhancement Sub-Types
+
+When classified as `FEATURE_ENHANCEMENT_ANALYSIS`, further classify into one of these sub-types:
+
+| Sub-Type | Trigger Keywords | Description |
+|---|---|---|
+| **MIGRATION_AUDIT** | migrate, migration, port, porting, move to, transition, legacy to new, deprecate, retire, framework migration | Analysis for migrating code/features from one framework/implementation to another |
+| **UNIFICATION** | unify, consolidate, merge, combine, centralize | Analysis for consolidating multiple implementations into one |
+| **REFACTORING** | refactor, restructure, reorganize, clean up | Analysis for improving code structure without changing behavior |
+| **FEATURE_EXTENSION** | extend, enhance, add capability, improve | Analysis for extending existing functionality |
+| **DEPRECATION** | deprecate, remove, sunset, phase out, end-of-life | Analysis for safely removing legacy code/features |
+
+Default to `FEATURE_EXTENSION` if no sub-type keywords are detected.
+
 ### 3. Required Inputs
 
 - User request in natural language
@@ -52,6 +66,22 @@ Use these rules in order:
 - Use case provided, behavior exists -> USE_CASE_ALIGNMENT_ANALYSIS
 - User asks to modify/improve existing behavior -> FEATURE_ENHANCEMENT_ANALYSIS
 - User asks for combined audit + change planning -> HYBRID_ANALYSIS
+
+#### 4.1 Migration Audit Detection Rules
+
+Classify as `FEATURE_ENHANCEMENT_ANALYSIS` with sub-type `MIGRATION_AUDIT` when:
+
+- User mentions migrating from "old" to "new" framework/implementation
+- User mentions porting legacy code to a new architecture
+- User mentions retiring/deprecating an old implementation in favor of a new one
+- User provides two package/module paths representing old and new implementations
+- User asks for API endpoint mapping, data flow comparison, or feature parity analysis between two implementations
+
+MIGRATION_AUDIT requires identifying:
+1. **Source (Legacy)**: The old framework/implementation to migrate FROM
+2. **Target (New)**: The new framework/implementation to migrate TO
+3. **Migration Scope**: What entities (tables, APIs, classes, configs) need migration
+4. **Feature Parity**: What capabilities must be preserved post-migration
 
 ### 5. Confidence Scoring
 
@@ -174,6 +204,73 @@ what could not be done, and why.
 
 Shallow scanning is not allowed.
 
+### 7.1 Migration Audit Deep Steps (Additional for MIGRATION_AUDIT sub-type)
+
+When sub-type is `MIGRATION_AUDIT`, execute these additional steps after the base workflow:
+
+9. Step: API Endpoint Mapping
+	 - Must do:
+		 - List all API endpoints in the legacy system (from security XML, route configs, or service classes).
+		 - Map each legacy endpoint to its GA (Generic/New) equivalent (if exists).
+		 - Identify endpoints with no GA equivalent (migration gaps).
+	 - Output evidence:
+		 - API endpoint comparison table: Method | Legacy Path | GA Equivalent | Status
+
+10. Step: Feature Parity Analysis
+	 - Must do:
+		 - List all features/capabilities in the legacy system.
+		 - Check each feature's presence in the new system.
+		 - Classify as: ✅ Supported | ⚠️ Partial | ❌ Missing
+	 - Output evidence:
+		 - Feature comparison matrix with support status
+
+11. Step: Database Schema Mapping
+	 - Must do:
+		 - Identify all DB tables used by legacy system.
+		 - Map each legacy table to its new framework equivalent.
+		 - Identify enum value mismatches, column differences, and data migration needs.
+	 - Output evidence:
+		 - Table mapping: Legacy Table | New Table | Migration Notes
+		 - Enum mapping: Enum Name | Legacy Value | New Value | Migration Action
+
+12. Step: Data Flow Comparison
+	 - Must do:
+		 - Document the legacy execution path (trigger → processing → persistence → response).
+		 - Document the new framework execution path.
+		 - Identify divergence points and integration boundaries.
+	 - Output evidence:
+		 - ASCII/text flow diagrams for both legacy and new paths
+		 - Divergence analysis table
+
+13. Step: Dependency & Coupling Analysis
+	 - Must do:
+		 - Identify classes in the new framework that import from the legacy package.
+		 - Identify shared utilities, enums, or constants between old and new.
+		 - Flag reverse couplings (new depends on old) as migration blockers.
+	 - Output evidence:
+		 - Import dependency list: New Class | Legacy Import | Blocker?
+
+14. Step: Pending Items & Team Ownership
+	 - Must do:
+		 - Separate pending items by team ownership (Legacy Team vs New Framework Team).
+		 - For each pending item, identify which migration step it blocks.
+		 - Identify cross-team dependencies.
+	 - Output evidence:
+		 - Pending items table with Owner, Priority, and Blocks columns
+
+15. Step: Migration Plan Generation
+	 - Must do:
+		 - Generate a phased migration plan (typically 6 steps):
+			 1. AT Coverage (protect existing behavior)
+			 2. Dual-Write (write to both old and new)
+			 3. Execution Redirect (switch to new with fallback)
+			 4. Data Migration (backfill existing data)
+			 5. Verification (confirm zero legacy usage)
+			 6. Cleanup (remove legacy code)
+		 - For each step, identify: Pre-requisites, Exit Criteria, Gaps Closed, User Impact
+	 - Output evidence:
+		 - 6-step migration plan with cross-references to gaps and actions
+
 ### 8. Knowledge Lens, Escalation Rules, Output Contract, and Governance
 
 See `.github/agents/base.agent.md` — loaded in Section 0.
@@ -203,6 +300,30 @@ Every run must produce a report that includes:
 - Recommendations and impact notes
 - Unknowns, scope limits, and final verdict
 
+### 9.3 Migration Audit Report Structure (for MIGRATION_AUDIT sub-type)
+
+When sub-type is `MIGRATION_AUDIT`, the report must additionally include:
+
+1. **Overview** - Migration context and version notes
+2. **Supported API Endpoints** - Legacy endpoints table and GA internal APIs table
+3. **Supported Features** - Feature comparison matrix (Legacy vs New with status)
+4. **Data Flows** - ASCII diagrams for Legacy, New, and Extension installation paths
+5. **Database Schema Mapping** - Table mapping and enum value migration notes
+6. **Gaps Analysis** - Gap table with ID, Description, Severity, Status
+7. **Pending Items** - Separated by team ownership:
+	 - Legacy Team items (bugs, maintenance)
+	 - Framework Team items (feature parity, migration blockers)
+	 - Cross-team dependencies
+8. **Migration Plan** - 6-step phased approach with:
+	 - Phase name and objective
+	 - Scope and user impact
+	 - Pre-requisites and exit criteria
+	 - Links to gaps closed by each phase
+9. **Key Classes Reference** - Important classes in both legacy and new frameworks
+10. **Appendix: Step-to-Gap-to-Action Cross-Reference Matrix**
+
+Output file naming convention: `migration-documentation-v{N}.md` where N is the version number.
+
 ### 10. Runtime Modes
 
 - AUTO (default): classify using rules above
@@ -211,3 +332,31 @@ Every run must produce a report that includes:
 - FORCE_ENHANCEMENT
 - FORCE_ALIGNMENT
 - FORCE_HYBRID
+- FORCE_MIGRATION_AUDIT (forces FEATURE_ENHANCEMENT_ANALYSIS with MIGRATION_AUDIT sub-type)
+
+### 11. Migration Audit Example Scenarios
+
+The following scenarios should trigger MIGRATION_AUDIT classification:
+
+| Scenario | User Request Pattern | Expected Output |
+|---|---|---|
+| Framework Migration | "Migrate custom actions from legacy to generic actions framework" | Full migration documentation with 6-step plan |
+| API Porting | "Port the old REST endpoints to the new internal manager APIs" | API mapping table with migration gaps |
+| Table Migration | "Move data from ZD_CUSTOMACTIONS to ZD_ACTIONS tables" | Schema mapping with enum value migration notes |
+| Code Retirement | "Document what's needed to remove the old customactions package" | Dependency analysis with cleanup checklist |
+| Feature Parity | "What features are missing in the new framework compared to legacy?" | Feature comparison matrix with gap severity |
+
+### 12. Migration Documentation Quality Checklist
+
+Before finalizing a MIGRATION_AUDIT report, verify:
+
+- [ ] All legacy API endpoints are listed with their GA equivalents
+- [ ] Feature comparison matrix covers all legacy capabilities
+- [ ] Enum value mismatches are identified with migration actions
+- [ ] Data flow diagrams exist for both legacy and new paths
+- [ ] Reverse couplings (new imports from old) are flagged as blockers
+- [ ] Pending items are separated by team ownership
+- [ ] Each migration step identifies pre-requisites and exit criteria
+- [ ] Cross-references link gaps → actions → migration steps
+- [ ] Extension support status is explicitly documented (if applicable)
+- [ ] User impact is described for each migration phase
