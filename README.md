@@ -2,10 +2,13 @@
 
 Reusable custom-agent assets for repository research and structured reporting.
 
-This repository follows a split-template model:
+This repository follows a split-template model by default:
 - `*-input-template.md` = type-specific request input format (one per analysis type)
-- `*-analysis-template.md` = required execution steps
 - `*-report-template.md` = report output format
+
+Agent-specific exception:
+- `.github/agents/*.agent.md` uses in-agent deep workflow steps for execution logic.
+- It still uses `*-input-template.md` and `*-report-template.md`.
 
 Shared knowledge that all agents rely on lives in [.github/knowledge](.github/knowledge).
 Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
@@ -25,7 +28,7 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
     - `field-knowledge.md` – domain glossary, business rules, data field definitions
 - `.github/templates/`
   - input templates (`*-input-template.md`) – one per analysis type plus a generic fallback
-  - analysis templates (`*-analysis-template.md`)
+	- execution-step templates – default workflow source for agents that externalize workflow
   - report templates (`*-report-template.md`)
 
 ## Add a New Agent
@@ -36,13 +39,13 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 	- `.github/docs/<agent>.guide.md`
 3. Add or reuse input template (per agent, per analysis type):
 	- `.github/templates/<type>-input-template.md`
-4. Add or reuse analysis/report template pair:
-	- `.github/templates/<type>-analysis-template.md`
+4. Add or reuse output templates for the agent:
 	- `.github/templates/<type>-report-template.md`
-5. Load the base agent contract (knowledge lens, governance, escalation rules) at the start of the agent file:
+5. define deep execution steps directly inside the agent file
+6. Load the base agent contract (knowledge lens, governance, escalation rules) at the start of the agent file:
 	- `.github/agents/base.agent.md`
-6. Add template mappings inside the agent file.
-7. Run one dry execution and verify evidence + output sections.
+7. Add template mappings inside the agent file.
+8. Run one dry execution and verify evidence + output sections.
 
 ## Use This Repo in Existing Projects
 
@@ -86,7 +89,7 @@ Menu names differ by IDE version/plugin. Use the steps below as a practical chec
 Validation checklist:
 - Agent loads without path errors.
 - Knowledge files are resolved and applied.
-- Analysis/report templates are resolved.
+- Required template references are resolved for that agent mode.
 - Output appears under `ai-research-report/`.
 
 ### IntelliJ IDEA (GitHub Copilot plugin)
@@ -123,7 +126,7 @@ Validation checklist:
   - Check relative paths in agent mapping.
   - Ensure clone/copy path matches README examples.
 - Agent loads but output is incomplete:
-  - Verify both template types exist (`analysis` + `report`).
+	- Verify required assets exist for that agent (`input` + `report`).
   - Ensure request includes clear scope and expected output.
 - Report not generated:
   - Confirm write permissions in project root.

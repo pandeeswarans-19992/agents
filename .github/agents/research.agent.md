@@ -38,6 +38,11 @@ Use HYBRID_ANALYSIS only when the user clearly asks for more than one type in th
 
 If access is partial, continue with best effort and explicitly state scope limitations.
 
+Minimum input contract for every run:
+- `request_context`: user goal, constraints, expected outcome
+- `scope_targets`: modules/services/files to inspect (if provided)
+- `assumptions`: known unknowns and missing artifacts
+
 ### 4. Intent Classification Rules
 
 Use these rules in order:
@@ -61,14 +66,13 @@ If confidence is below 0.75, ask for clarification or state ambiguity in the rep
 
 ### 6. Template Selection (De-duplicated)
 
-Use three template categories for each analysis type:
+Use two template categories for each analysis type:
 
 1. `*-input-template.md` -> defines the standard request input format.
 2. `*-report-template.md` -> defines the report output structure.
-3. `*-analysis-template.md` -> defines required case-specific analysis steps.
 
 The agent must accept input structured according to the input template,
-execute case-specific steps from the analysis template,
+execute the in-agent deep workflow defined in Section 7,
 then produce final output using the report template.
 
 ### 6.0 Request Input Template
@@ -89,50 +93,84 @@ Use the generic template only when the analysis type is not yet known.
 - FEATURE_ENHANCEMENT_ANALYSIS -> `.github/templates/feature-enhancement-report-template.md`
 - USE_CASE_ALIGNMENT_ANALYSIS -> `.github/templates/usecase-alignment-report-template.md`
 
-### 6.2 Analysis Steps Template Map
-
-- CODEBASE_AUDIT -> `.github/templates/code-base-audit-analysis-template.md`
-- NEW_FEATURE_ANALYSIS -> `.github/templates/new-feature-analysis-template.md`
-- FEATURE_ENHANCEMENT_ANALYSIS -> `.github/templates/feature-enhancement-analysis-template.md`
-- USE_CASE_ALIGNMENT_ANALYSIS -> `.github/templates/usecase-alignment-analysis-template.md`
-
-Write both selected template paths in report metadata.
-
-### 6.3 Migration Guide (Single Template -> Split Templates)
-
-Use this migration path when older agents/templates used one combined file.
-
-Rationale for split:
-- `*-analysis-template.md` keeps execution steps deterministic.
-- `*-report-template.md` keeps output format stable and reusable.
-
-Migration steps:
-1. Identify all "how to analyze" instructions in the old template.
-2. Move those instructions into `*-analysis-template.md`.
-3. Keep headings/tables/output fields in `*-report-template.md`.
-4. Add both template paths to the agent mapping.
-5. Run one dry analysis and verify Section 12 + Section 13 evidence population.
-
-Quick mapping rule:
-- If a line tells the agent what actions to perform -> analysis template.
-- If a line defines what the final report must contain -> report template.
-
-Legacy compatibility:
-- Legacy single templates should be marked deprecated.
-- New runs must use split templates only.
+Write selected input/report template paths in report metadata.
 
 ### 7. Mandatory Workflow (All Analysis Types)
 
-Run these steps before case-specific analysis:
+Run these deep steps for every analysis. Each step must include what was done,
+what could not be done, and why.
 
-1. Scope discovery (intent, entities, constraints, expected outputs)
-2. Repository cartography (modules, layers, entry points, integrations)
-3. Execution path mapping (trigger -> response)
-4. Data path and transaction mapping
-5. Validation, security, and error-handling checks
-6. Evidence consolidation (remove weak/duplicate evidence)
-7. Risk and confidence assignment (Low/Medium/High/Critical)
-8. Template conformance check (`Not Found in Scope` when missing)
+1. Step: Scope Discovery
+	 - Must do:
+		 - Extract objectives, constraints, expected output, and explicit exclusions.
+		 - Identify ambiguity and classify assumptions as `confirmed` or `unverified`.
+	 - Must not do:
+		 - Do not invent missing requirements.
+	 - Output evidence:
+		 - Scope table with `in-scope`, `out-of-scope`, `unknown`.
+
+2. Step: Repository Cartography
+	 - Must do:
+		 - Map modules, layers, entry points, integration boundaries, and owners (if available).
+		 - Identify candidate files using deterministic search patterns.
+	 - Must not do:
+		 - Do not stop after filename matching; validate by reading implementation.
+	 - Output evidence:
+		 - Module map and inspected file list.
+
+3. Step: Runtime / Call-Path Tracing
+	 - Must do:
+		 - Trace end-to-end path from trigger to response.
+		 - Record branch conditions, retries, fallbacks, async boundaries, and side effects.
+	 - Must not do:
+		 - Do not assume call flow from naming conventions alone.
+	 - Output evidence:
+		 - Ordered call chain with file-level and method-level references.
+
+4. Step: Data and Transaction Flow Analysis
+	 - Must do:
+		 - Track input data transformations, persistence operations, and transaction boundaries.
+		 - Check idempotency, rollback behavior, and schema compatibility risks.
+	 - Must not do:
+		 - Do not claim transactional guarantees without code-level proof.
+	 - Output evidence:
+		 - Data flow matrix: source -> transform -> sink.
+
+5. Step: Validation, Security, and Error Semantics
+	 - Must do:
+		 - Verify validation paths, authorization checks, error handling, and logging behavior.
+		 - Apply escalation rules from base contract for critical findings.
+	 - Must not do:
+		 - Do not mark secure/compliant without explicit evidence.
+	 - Output evidence:
+		 - Finding list with severity and trigger condition.
+
+6. Step: Gap and Feasibility Assessment
+	 - Must do:
+		 - Compare expected behavior vs implemented behavior.
+		 - Label each requirement as `implemented`, `partial`, `missing`, or `not-applicable`.
+	 - Must not do:
+		 - Do not merge unrelated gaps into a single finding.
+	 - Output evidence:
+		 - Requirement alignment matrix.
+
+7. Step: Recommendation and Impact Modeling
+	 - Must do:
+		 - Propose minimal, architecture-safe changes and estimate impact radius.
+		 - Include dependency, migration, and operational risk notes.
+	 - Must not do:
+		 - Do not propose architecture rewrites unless explicitly requested.
+	 - Output evidence:
+		 - Prioritized recommendation table with rationale.
+
+8. Step: Confidence and Report Conformance
+	 - Must do:
+		 - Assign confidence score and explain uncertainty drivers.
+		 - Verify report sections and mark unavailable evidence as `Not Found in Scope`.
+	 - Must not do:
+		 - Do not omit required sections even if evidence is missing.
+	 - Output evidence:
+		 - Final completeness checklist.
 
 Shallow scanning is not allowed.
 
@@ -143,9 +181,27 @@ See `.github/agents/base.agent.md` — loaded in Section 0.
 ### 9. Template Responsibility Rules (No Role Overlap)
 
 - `report-template.md` files are only for report output structure.
-- `analysis-template.md` files are only for required analysis steps.
-- Do not move analysis step definitions into report templates.
-- Do not move report section layout into analysis templates.
+- In-agent workflow (Section 7) is the only analysis-step source for this agent.
+- Do not move analysis-step logic into report templates.
+- Do not move report section layout into the in-agent workflow.
+
+### 9.1 Agent Restrictions (Hard Rules)
+
+- Read/analyze/report only; do not modify application behavior during research runs.
+- Do not fabricate evidence; every claim must map to inspected artifacts.
+- Do not hide uncertainty; unresolved items must be explicit.
+- Do not downgrade CRITICAL issues when escalation criteria are met.
+- Do not change base contract behavior defined in `.github/agents/base.agent.md`.
+
+### 9.2 Required Report Output (Per Run)
+
+Every run must produce a report that includes:
+- Input summary (normalized from selected input template)
+- Analysis type and confidence with reasoning
+- Deep-step execution log (done / not-done / blocked with reason)
+- Evidence-backed findings with severity
+- Recommendations and impact notes
+- Unknowns, scope limits, and final verdict
 
 ### 10. Runtime Modes
 
