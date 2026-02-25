@@ -1,114 +1,104 @@
 # Module Knowledge
 
-Purpose: Document the names, responsibilities, ownership boundaries, and
-inter-module contracts for every major module in the system.
-Agents use this file to avoid re-discovering module structure on every run.
+Purpose: Define what a module is, how it is structured, and the architectural
+rules that govern every module in the system. Agents must apply this understanding
+when analysing, generating, or reviewing any module.
 
-## Application Context
+## What Is a Module?
 
-Domain: Hospital Management System
-The system manages doctors, patients, and payments. Each concept is represented
-as a module with a dedicated base table, optional dependency tables, and
-join relationships to related modules.
+A **module** is a self-contained feature unit that encapsulates a single
+business concept. It owns its own data, exposes a defined interface to other
+modules, and must not reach into another module's internals.
 
-## Module Inventory
+Each module consists of:
 
-| Module Name | Base Table         | Responsibility                                          | Status |
-|-------------|--------------------|---------------------------------------------------------|--------|
-| Doctor      | doctor             | Stores doctor profiles including specialty information  | Active |
-| Patient     | patient            | Stores patient demographic and contact details          | Active |
-| Payment     | payment            | Tracks payment transactions linked to patients          | Active |
+- **Base table** – the primary database table that owns the module's core data.
+- **Dependency tables** – lookup or reference tables the module relies on
+  (e.g. a `picklist_value` table that supplies allowed values for a picklist field).
+- **Join information** – the declared relationships to other module base tables
+  expressed as foreign-key joins.
+- **Fields** – the named, typed attributes stored in the base table
+  (see `field-knowledge.md` for the complete field-type reference).
 
-## Module Field Definitions
+## Module Architecture
 
-### Doctor Module
+```
+┌─────────────────────────────┐
+│           Module            │
+│                             │
+│  ┌─────────────────────┐    │
+│  │     Base Table      │    │  ← owns core data rows
+│  └────────┬────────────┘    │
+│           │ joins           │
+│  ┌────────▼────────────┐    │
+│  │  Dependency Tables  │    │  ← picklist_value, lookup tables, etc.
+│  └─────────────────────┘    │
+│                             │
+│  Fields: id, name, ...      │  ← each field has a type mapped to a DB column
+└────────────┬────────────────┘
+             │ foreign-key reference
+             ▼
+       Another Module's Base Table
+```
 
-Base table: `doctor`
+### Structural rules
 
-| Field Name  | Field Type | DB Column Type | Constraints              | Notes                              |
-|-------------|------------|----------------|--------------------------|------------------------------------|
-| id          | long       | BIGINT         | PRIMARY KEY, NOT NULL    | Auto-incremented surrogate key     |
-| name        | singleline | VARCHAR(255)   | NOT NULL                 | Full name of the doctor            |
-| description | textarea   | TEXT           | NULLABLE                 | Free-text biography or notes       |
-| specialist  | picklist   | VARCHAR(100)   | NOT NULL                 | Allowed values defined in picklist table (e.g. Cardiology, Neurology, Orthopedics, General) |
-
-Dependency tables:
-- `picklist_value` – stores the allowed values for `specialist`; joined on `doctor.specialist = picklist_value.value_key`
-
-### Patient Module
-
-Base table: `patient`
-
-| Field Name  | Field Type | DB Column Type | Constraints              | Notes                                    |
-|-------------|------------|----------------|--------------------------|------------------------------------------|
-| id          | long       | BIGINT         | PRIMARY KEY, NOT NULL    | Auto-incremented surrogate key           |
-| name        | singleline | VARCHAR(255)   | NOT NULL                 | Full name of the patient                 |
-| age         | number     | INT            | NOT NULL, >= 0           | Age in years                             |
-| gender      | picklist   | VARCHAR(20)    | NOT NULL                 | Allowed values: Male, Female, Other      |
-| contact     | singleline | VARCHAR(20)    | NOT NULL                 | Primary phone or contact number          |
-| description | textarea   | TEXT           | NULLABLE                 | Medical history summary or notes         |
-| doctor_id   | long       | BIGINT         | FOREIGN KEY (doctor.id)  | Assigned/primary doctor                  |
-
-Dependency tables:
-- `picklist_value` – stores the allowed values for `gender`; joined on `patient.gender = picklist_value.value_key`
-
-Join information:
-- `patient` JOIN `doctor` ON `patient.doctor_id = doctor.id` – resolves the assigned doctor record
-
-### Payment Module
-
-Base table: `payment`
-
-| Field Name    | Field Type | DB Column Type | Constraints              | Notes                                        |
-|---------------|------------|----------------|--------------------------|----------------------------------------------|
-| id            | long       | BIGINT         | PRIMARY KEY, NOT NULL    | Auto-incremented surrogate key               |
-| patient_id    | long       | BIGINT         | FOREIGN KEY (patient.id) | Patient associated with this payment         |
-| amount        | number     | INT            | NOT NULL, > 0            | Payment amount (in smallest currency unit)   |
-| status        | picklist   | VARCHAR(50)    | NOT NULL                 | Allowed values: Pending, Completed, Refunded |
-| payment_date  | singleline | VARCHAR(20)    | NOT NULL                 | ISO 8601 date string (YYYY-MM-DD)            |
-| description   | textarea   | TEXT           | NULLABLE                 | Remarks or invoice reference                 |
-
-Dependency tables:
-- `picklist_value` – stores the allowed values for `status`; joined on `payment.status = picklist_value.value_key`
-
-Join information:
-- `payment` JOIN `patient` ON `payment.patient_id = patient.id` – resolves the patient associated with the payment
-- `payment` JOIN `patient` JOIN `doctor` ON `payment.patient_id = patient.id AND patient.doctor_id = doctor.id` – full chain to resolve treating doctor
+1. Every module **must** have a surrogate primary key field named `id` of type `long` (→ `BIGINT`).
+2. References to another module are expressed as a `long` foreign-key field pointing to the other module's `id`.
+3. Dependency tables (e.g. picklist values) are joined, not embedded; they must not be owned by more than one module.
+4. Join direction is always from the depending module to the depended-on module; circular joins are not permitted.
 
 ## Module Dependency Map
 
-Permitted dependency directions between modules:
+Modules may declare dependencies on other modules through foreign-key fields.
+The permitted direction is: **dependent module → depended-on module**.
 
-- Payment -> Patient: a payment must always be linked to a patient (`payment.patient_id`)
-- Patient -> Doctor: a patient may be assigned to a doctor (`patient.doctor_id`)
-- Doctor: no outgoing foreign-key dependencies to other domain modules
+Dependency rules:
+- A module may depend on one or more other modules via foreign-key fields.
+- Dependency direction must be unidirectional; no circular dependencies are allowed.
+- Cross-module reads are done through declared joins; a module must never write to another module's base table.
 
 ## Module Contracts
 
-### Doctor
+Every module exposes a contract that describes its public interface:
 
-- Exposes: doctor record identified by `id`; readable by Patient and (transitively) Payment
-- Consumes: `picklist_value` for specialist field validation
-- Invariants: `id` must be unique and immutable; `specialist` must match a value in `picklist_value`
-- Known breaking-change risks: renaming or removing a specialist picklist value will orphan existing doctor records
+- **Exposes** – the record(s) and identifier(s) other modules may read.
+- **Consumes** – the modules or dependency tables it reads from.
+- **Invariants** – rules that callers must never violate (e.g. a referenced `id` must exist).
+- **Breaking-change risks** – changes that would silently break dependent modules.
 
-### Patient
+## Golden Example — Doctor Module
 
-- Exposes: patient record identified by `id`; readable by Payment
-- Consumes: Doctor module (via `doctor_id`), `picklist_value` for gender
-- Invariants: `id` must be unique and immutable; `doctor_id` must reference a valid `doctor.id`
-- Known breaking-change risks: deleting a doctor record without nullifying or reassigning `patient.doctor_id` will break referential integrity
+The **Doctor** module illustrates all of the above concepts applied to a single
+real-world entity.
 
-### Payment
+**Base table:** `doctor`
 
-- Exposes: payment transaction record identified by `id`
-- Consumes: Patient module (via `patient_id`), `picklist_value` for status
-- Invariants: `id` must be unique and immutable; `patient_id` must reference a valid `patient.id`; `amount` must be > 0
-- Known breaking-change risks: deleting a patient without cascading or archiving payments will break referential integrity
+| Field Name  | Field Type | DB Column Type | Constraints           | Notes                                              |
+|-------------|------------|----------------|-----------------------|----------------------------------------------------|
+| id          | long       | BIGINT         | PRIMARY KEY, NOT NULL | Auto-incremented surrogate key                     |
+| name        | singleline | VARCHAR(255)   | NOT NULL              | Full name of the doctor                            |
+| description | textarea   | TEXT           | NULLABLE              | Free-text biography or notes                       |
+| specialist  | picklist   | VARCHAR(100)   | NOT NULL              | Value must exist in the `picklist_value` table     |
 
-## Cross-Cutting Modules
+**Dependency table:**
+- `picklist_value` — supplies the allowed values for the `specialist` picklist field.
+- Join: `doctor.specialist = picklist_value.value_key`
 
-- `picklist_value`: shared lookup table used by Doctor (`specialist`), Patient (`gender`), and Payment (`status`); must not be deleted without verifying all referencing modules
+**Contract:**
+- Exposes: the doctor record identified by `id`.
+- Consumes: `picklist_value` for specialist validation.
+- Invariants: `id` is unique and immutable; `specialist` must resolve to an entry in `picklist_value`.
+- Breaking-change risk: removing a picklist value while doctor records still reference it will leave orphaned keys.
+
+This same structural pattern — base table, dependency tables, join info, and contract — applies to every module in the system.
+
+## Module Inventory
+
+List each module in the table below. Add or update rows as the codebase evolves.
+
+| Module Name | Base Table | Responsibility | Status |
+|-------------|------------|----------------|--------|
 
 ## Deprecated Modules
 

@@ -1,106 +1,77 @@
 # Field Knowledge
 
-Purpose: Document domain terminology, business rules, data field definitions,
-and validation constraints that agents must understand to produce accurate findings.
-Populate this file with project-specific domain context to avoid repeated discovery.
+Purpose: Define what a field is, the supported field types, how each type maps
+to a database column type, and the architectural rules that govern field usage
+across all modules. Agents must apply this reference when analysing or generating
+any module's schema.
 
-## Field Type to Database Column Mapping
+## What Is a Field?
 
-Every field in the system has a logical type that maps directly to a database column type.
-Agents must apply this mapping when reasoning about schema design, migrations, or validations.
+A **field** is a named, typed attribute that belongs to a module. Every field:
 
-| Field Type | DB Column Type | Notes                                                       |
-|------------|----------------|-------------------------------------------------------------|
-| long       | BIGINT         | Used for surrogate keys (id) and foreign keys               |
-| number     | INT            | General-purpose integer values (age, amounts, counts)       |
-| boolean    | TINYINT(1)     | 0 = false, 1 = true                                         |
-| singleline | VARCHAR(255)   | Short free-text strings; max 255 characters unless noted    |
-| textarea   | TEXT           | Long free-text content; no practical length limit           |
-| picklist   | VARCHAR(100)   | Stores the selected value key; valid values in picklist_value table |
+- Has a **name** that uniquely identifies it within its module.
+- Has a **logical type** chosen from the supported type list below.
+- Maps directly to a **database column type** determined by its logical type.
+- May carry constraints (NOT NULL, UNIQUE, FOREIGN KEY, etc.).
 
-## Domain Glossary
+Fields are the building blocks of a module's base table. The combination of all
+fields in a module defines the complete shape of the data that module owns.
 
-| Term          | Definition                                                        | Common Code Identifiers              |
-|---------------|-------------------------------------------------------------------|--------------------------------------|
-| Module        | A self-contained feature area with its own base table and fields  | doctor, patient, payment             |
-| Base Table    | The primary database table owned by a module                      | doctor, patient, payment             |
-| Picklist      | A field whose value must come from a predefined set of options    | specialist, gender, status           |
-| Picklist Value| A row in `picklist_value` representing one allowed option         | picklist_value.value_key             |
-| Foreign Key   | A `long` field that references the `id` of another module's table | doctor_id, patient_id                |
-| Singleline    | A VARCHAR field for short text input                              | name, contact, payment_date          |
-| Textarea      | A TEXT field for long-form free text                              | description                          |
+## Field Types and Database Column Mapping
 
-## Core Business Rules
+Each logical field type maps to exactly one database column type. Agents must
+use this mapping when reasoning about schema design, migrations, or validations.
 
-- BR-001 – Every module record must have an `id` field of type `long` (BIGINT) as its primary key.
-- BR-002 – Every foreign-key field must use type `long` (BIGINT) to match the referenced table's `id` column.
-- BR-003 – Picklist fields must store a value key that exists in the `picklist_value` table; orphaned keys are invalid.
-- BR-004 – `amount` in the Payment module must be greater than zero.
-- BR-005 – `payment_date` must be a valid ISO 8601 date string (YYYY-MM-DD).
-- BR-006 – A payment record must always reference a valid patient; orphaned payments are not permitted.
-- BR-007 – A patient's `doctor_id` must reference a valid doctor record when set.
+| Field Type | DB Column Type | Description                                                         |
+|------------|----------------|---------------------------------------------------------------------|
+| long       | BIGINT         | 64-bit integer. Used for surrogate primary keys and foreign keys.   |
+| number     | INT            | 32-bit integer. Used for counts, ages, amounts, and other numerics. |
+| boolean    | TINYINT(1)     | 0 = false, 1 = true.                                                |
+| singleline | VARCHAR(255)   | Short free-text string up to 255 characters.                        |
+| textarea   | TEXT           | Long free-text content with no practical length limit.              |
+| picklist   | VARCHAR(100)   | Stores a value key; allowed values are defined in a dependency table (e.g. `picklist_value`). |
+
+## Field Architecture Rules
+
+1. **Primary key** – every module must have an `id` field of type `long` (→ `BIGINT`) as its surrogate primary key.
+2. **Foreign key** – references to another module's record must use a `long` field pointing to the other module's `id` column.
+3. **Picklist constraint** – a `picklist` field stores only a key string; the set of valid keys is maintained in a separate dependency table joined at read time.
+4. **Type consistency** – a field's logical type must not be overridden per-module; the mapping above is canonical across the entire system.
+
+## Golden Example — Doctor Module Fields
+
+The **Doctor** module demonstrates how fields and their types are applied in practice.
+
+Base table: `doctor`
+
+| Field Name  | Field Type | DB Column Type | Constraints           | Notes                                                 |
+|-------------|------------|----------------|-----------------------|-------------------------------------------------------|
+| id          | long       | BIGINT         | PRIMARY KEY, NOT NULL | Surrogate key; auto-incremented by the database.      |
+| name        | singleline | VARCHAR(255)   | NOT NULL              | Short text — fits the `singleline` type.              |
+| description | textarea   | TEXT           | NULLABLE              | Long free-text — fits the `textarea` type.            |
+| specialist  | picklist   | VARCHAR(100)   | NOT NULL              | Value must resolve in the `picklist_value` dependency table. |
+
+**Why these types?**
+- `id` uses `long` because all surrogate keys are BIGINT.
+- `name` uses `singleline` because it is a short human-readable label.
+- `description` uses `textarea` because it holds unbounded free-form text.
+- `specialist` uses `picklist` because its value must come from a controlled vocabulary.
+
+This same reasoning — choose the type that matches the data's nature and constraints — applies when defining fields for any module.
 
 ## Key Data Fields
 
-### Doctor Module (`doctor` table)
+Document the important fields across all modules below. Add or update rows as
+the system evolves.
 
-| Field Name  | Entity / Table | Type       | DB Column Type | Valid Values / Constraints                        | Business Significance                         |
-|-------------|---------------|------------|----------------|--------------------------------------------------|-----------------------------------------------|
-| id          | doctor        | long       | BIGINT         | PK, NOT NULL, auto-increment                     | Unique identifier for a doctor record         |
-| name        | doctor        | singleline | VARCHAR(255)   | NOT NULL, non-empty                              | Doctor's full name                            |
-| description | doctor        | textarea   | TEXT           | NULLABLE                                         | Biography, qualifications, or general notes   |
-| specialist  | doctor        | picklist   | VARCHAR(100)   | NOT NULL; value must exist in picklist_value     | Doctor's area of medical specialization       |
-
-### Patient Module (`patient` table)
-
-| Field Name  | Entity / Table | Type       | DB Column Type | Valid Values / Constraints                        | Business Significance                         |
-|-------------|---------------|------------|----------------|--------------------------------------------------|-----------------------------------------------|
-| id          | patient       | long       | BIGINT         | PK, NOT NULL, auto-increment                     | Unique identifier for a patient record        |
-| name        | patient       | singleline | VARCHAR(255)   | NOT NULL, non-empty                              | Patient's full name                           |
-| age         | patient       | number     | INT            | NOT NULL, >= 0                                   | Patient's age in years                        |
-| gender      | patient       | picklist   | VARCHAR(20)    | NOT NULL; value must exist in picklist_value     | Patient's gender identity                     |
-| contact     | patient       | singleline | VARCHAR(20)    | NOT NULL, non-empty                              | Primary phone or contact number               |
-| description | patient       | textarea   | TEXT           | NULLABLE                                         | Medical history summary or additional notes   |
-| doctor_id   | patient       | long       | BIGINT         | FK → doctor.id; NULLABLE                         | Assigned primary doctor for the patient       |
-
-### Payment Module (`payment` table)
-
-| Field Name   | Entity / Table | Type       | DB Column Type | Valid Values / Constraints                        | Business Significance                         |
-|--------------|---------------|------------|----------------|--------------------------------------------------|-----------------------------------------------|
-| id           | payment       | long       | BIGINT         | PK, NOT NULL, auto-increment                     | Unique identifier for a payment record        |
-| patient_id   | payment       | long       | BIGINT         | FK → patient.id; NOT NULL                        | Patient associated with this payment          |
-| amount       | payment       | number     | INT            | NOT NULL, > 0                                    | Payment amount in the smallest currency unit  |
-| status       | payment       | picklist   | VARCHAR(50)    | NOT NULL; value must exist in picklist_value     | Current payment state                         |
-| payment_date | payment       | singleline | VARCHAR(20)    | NOT NULL; must be valid ISO 8601 date (YYYY-MM-DD)| Date on which the payment was made           |
-| description  | payment       | textarea   | TEXT           | NULLABLE                                         | Remarks, invoice reference, or billing notes  |
+| Field Name | Module / Table | Field Type | DB Column Type | Constraints | Notes |
+|------------|---------------|------------|----------------|-------------|-------|
 
 ## Validation Rules
 
-- id (all modules): must be a positive BIGINT; generated by the database; must not be supplied by the client on create
-- name (doctor, patient): must be non-empty after trimming whitespace; max 255 characters
-- specialist (doctor): must match an active value in `picklist_value` for the `specialist` picklist group
-- age (patient): must be an integer >= 0
-- gender (patient): must match an active value in `picklist_value` for the `gender` picklist group
-- contact (patient): must be non-empty; should match a phone-number pattern
-- doctor_id (patient): when provided, must reference an existing `doctor.id`
-- patient_id (payment): must reference an existing `patient.id`; required on every payment record
-- amount (payment): must be a positive integer > 0
-- status (payment): must match an active value in `picklist_value` for the `status` picklist group
-- payment_date (payment): must be a valid ISO 8601 date string (YYYY-MM-DD)
+Capture explicit validation rules for fields. Agents should flag code that
+bypasses or weakens these rules.
 
-## State Machines
-
-### Payment
-
-- States: Pending, Completed, Refunded
-- Allowed transitions:
-  - Pending -> Completed: payment is successfully processed
-  - Pending -> Refunded: payment is cancelled before processing
-  - Completed -> Refunded: payment is reversed after processing
-- Terminal states: Refunded (no further transitions permitted once refunded)
-
-## Compliance and Regulatory Notes
-
-- Patient personal data (name, age, gender, contact): classified as sensitive personally identifiable information (PII); must not appear in logs or error messages (see common-knowledge.md BR on sensitive data).
-- Payment amount data: must be stored and transmitted accurately; any rounding must be explicitly documented.
-
+- id (any module): generated by the database; must not be supplied by the client on create.
+- picklist (any module): stored value key must resolve to an active entry in the dependency table; orphaned keys are invalid.
+- long used as FK (any module): must reference an existing row in the target module's base table.
