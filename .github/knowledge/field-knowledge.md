@@ -1,53 +1,77 @@
 # Field Knowledge
 
-Purpose: Document domain terminology, business rules, data field definitions,
-and validation constraints that agents must understand to produce accurate findings.
-Populate this file with project-specific domain context to avoid repeated discovery.
+Purpose: Define what a field is, the supported field types, how each type maps
+to a database column type, and the architectural rules that govern field usage
+across all modules. Agents must apply this reference when analysing or generating
+any module's schema.
 
-## Domain Glossary
+## What Is a Field?
 
-Define key business terms used in code, APIs, and documentation.
+A **field** is a named, typed attribute that belongs to a module. Every field:
 
-| Term | Definition | Common Code Identifiers |
-|------|------------|------------------------|
-| (term) | (plain-language definition) | (variable/class names where this appears) |
+- Has a **name** that uniquely identifies it within its module.
+- Has a **logical type** chosen from the supported type list below.
+- Maps directly to a **database column type** determined by its logical type.
+- May carry constraints (NOT NULL, UNIQUE, FOREIGN KEY, etc.).
 
-## Core Business Rules
+Fields are the building blocks of a module's base table. The combination of all
+fields in a module defines the complete shape of the data that module owns.
 
-List rules that are non-negotiable from a business perspective and that any
-analysis must treat as invariants.
+## Field Types and Database Column Mapping
 
-- (Rule ID) – (description of rule and where it applies)
+Each logical field type maps to exactly one database column type. Agents must
+use this mapping when reasoning about schema design, migrations, or validations.
+
+| Field Type | DB Column Type | Description                                                         |
+|------------|----------------|---------------------------------------------------------------------|
+| long       | BIGINT         | 64-bit integer. Used for surrogate primary keys and foreign keys.   |
+| number     | INT            | 32-bit integer. Used for counts, ages, amounts, and other numerics. |
+| boolean    | TINYINT(1)     | 0 = false, 1 = true.                                                |
+| singleline | VARCHAR(255)   | Short free-text string up to 255 characters.                        |
+| textarea   | TEXT           | Long free-text content with no practical length limit.              |
+| picklist   | VARCHAR(100)   | Stores a value key; allowed values are defined in a dependency table (e.g. `picklist_value`). |
+
+## Field Architecture Rules
+
+1. **Primary key** – every module must have an `id` field of type `long` (→ `BIGINT`) as its surrogate primary key.
+2. **Foreign key** – references to another module's record must use a `long` field pointing to the other module's `id` column.
+3. **Picklist constraint** – a `picklist` field stores only a key string; the set of valid keys is maintained in a separate dependency table joined at read time.
+4. **Type consistency** – a field's logical type must not be overridden per-module; the mapping above is canonical across the entire system.
+
+## Golden Example — Doctor Module Fields
+
+The **Doctor** module demonstrates how fields and their types are applied in practice.
+
+Base table: `doctor`
+
+| Field Name  | Field Type | DB Column Type | Constraints           | Notes                                                 |
+|-------------|------------|----------------|-----------------------|-------------------------------------------------------|
+| id          | long       | BIGINT         | PRIMARY KEY, NOT NULL | Surrogate key; auto-incremented by the database.      |
+| name        | singleline | VARCHAR(255)   | NOT NULL              | Short text — fits the `singleline` type.              |
+| description | textarea   | TEXT           | NULLABLE              | Long free-text — fits the `textarea` type.            |
+| specialist  | picklist   | VARCHAR(100)   | NOT NULL              | Value must resolve in the `picklist_value` dependency table. |
+
+**Why these types?**
+- `id` uses `long` because all surrogate keys are BIGINT.
+- `name` uses `singleline` because it is a short human-readable label.
+- `description` uses `textarea` because it holds unbounded free-form text.
+- `specialist` uses `picklist` because its value must come from a controlled vocabulary.
+
+This same reasoning — choose the type that matches the data's nature and constraints — applies when defining fields for any module.
 
 ## Key Data Fields
 
-Document important domain fields including their valid values, constraints, and
-any business significance that affects implementation decisions.
+Document the important fields across all modules below. Add or update rows as
+the system evolves.
 
-| Field Name | Entity / Table | Type | Valid Values / Constraints | Business Significance |
-|------------|---------------|------|---------------------------|----------------------|
-| (field)    | (entity)      | (type) | (constraints)           | (why it matters)     |
+| Field Name | Module / Table | Field Type | DB Column Type | Constraints | Notes |
+|------------|---------------|------------|----------------|-------------|-------|
 
 ## Validation Rules
 
-Capture explicit validation rules that apply to fields or operations.
-Agents should flag any code that bypasses or weakens these rules.
+Capture explicit validation rules for fields. Agents should flag code that
+bypasses or weakens these rules.
 
-- (field or operation): (validation rule and enforcement expectation)
-
-## State Machines
-
-For entities that transition through states, document the allowed transitions.
-
-### (Entity Name)
-
-- States: (list of valid states)
-- Allowed transitions: (from-state) -> (to-state): (trigger/condition)
-- Terminal states: (states from which no further transition is permitted)
-
-## Compliance and Regulatory Notes
-
-Record any regulatory or compliance requirements that constrain field handling,
-storage, or transmission.
-
-- (requirement): (description and affected fields/flows)
+- id (any module): generated by the database; must not be supplied by the client on create.
+- picklist (any module): stored value key must resolve to an active entry in the dependency table; orphaned keys are invalid.
+- long used as FK (any module): must reference an existing row in the target module's base table.
