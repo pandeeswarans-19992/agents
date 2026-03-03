@@ -64,17 +64,45 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 
 ## Use This Repo in Existing Projects
 
-### Option A (recommended): Clone into project root
+### Option A (recommended): Add as a Git Submodule
 
-From target project root:
+From default branch of target project root:
 
-1. `git clone <repo-url> agents`
-2. Keep paths unchanged:
-	- `agents/.github/agents/`
-	- `agents/.github/docs/`
-	- `agents/.github/knowledge/`
-	- `agents/.github/templates/`
-3. Point your IDE custom-agent configuration to the required agent file.
+1. Add the submodule (mounts this repo at `.github/`):
+	```bash
+	git submodule add <repo-url> .github
+	```
+2. Commit the changes (Git auto-creates a `.gitmodules` file):
+	```bash
+	git add .gitmodules .github
+	git commit -m "Add agents repo as .github submodule"
+	```
+3. Resulting paths in the consuming project:
+	- `.github/agents/`
+	- `.github/docs/`
+	- `.github/knowledge/`
+	- `.github/templates/`
+4. Point your IDE custom-agent configuration to the required agent file.
+
+#### For collaborators cloning the project for the first time
+
+```bash
+git clone --recurse-submodules <project-url>
+```
+
+Or, if already cloned without `--recurse-submodules`:
+
+```bash
+git submodule update --init --recursive
+```
+
+#### Updating the submodule to the latest version
+
+```bash
+git submodule update --remote .github
+git add .github
+git commit -m "Update agents submodule to latest"
+```
 
 ### Option B: Copy into target project `.github/`
 
@@ -85,9 +113,16 @@ From target project root:
 	- `.github/templates/`
 2. Keep relative paths unchanged so template and knowledge mappings remain valid.
 
+> **Note:** With this option you must manually sync updates from the source repo.
+
 ## IDE Configuration (Detailed)
 
 Menu names differ by IDE version/plugin. Use the steps below as a practical checklist.
+
+> **Prerequisite:** Ensure the submodule is initialized before configuring your IDE:
+> ```bash
+> git submodule update --init --recursive
+> ```
 
 ### VS Code (GitHub Copilot)
 
@@ -95,11 +130,11 @@ Menu names differ by IDE version/plugin. Use the steps below as a practical chec
 2. Ensure workspace is trusted.
 3. Open GitHub Copilot settings.
 4. Add/register the agent instruction file path, for example:
-	- `agents/.github/agents/research.agent.md`
-	- `agents/.github/agents/field-filter-api-assistant.agent.md`
+	- `.github/agents/research.agent.md`
+	- `.github/agents/field-filter-api-assistant.agent.md`
 5. Confirm referenced templates and knowledge files are accessible from the same workspace:
-	- `agents/.github/templates/*.md`
-	- `agents/.github/knowledge/*.md`
+	- `.github/templates/*.md`
+	- `.github/knowledge/*.md`
 6. Run a test request and verify report output path is created.
 
 Validation checklist:
@@ -113,8 +148,8 @@ Validation checklist:
 1. Open project and enable GitHub Copilot plugin.
 2. Open plugin settings / custom instructions area.
 3. Register agent file path, for example:
-	- `agents/.github/agents/research.agent.md`
-4. Ensure project root includes the cloned `agents` folder (or copied `.github` paths).
+	- `.github/agents/research.agent.md`
+4. Ensure `.github` submodule is initialized and populated.
 5. Run a sample prompt and confirm template references resolve.
 
 Validation checklist:
@@ -127,7 +162,7 @@ Validation checklist:
 1. Install and enable the Copilot/custom prompt plugin.
 2. Open Preferences for the plugin.
 3. Set instruction/agent file location to:
-	- `agents/.github/agents/research.agent.md`
+	- `.github/agents/research.agent.md`
 4. Verify plugin has workspace file read access.
 5. Execute a sample analysis and verify report generation.
 
@@ -138,9 +173,13 @@ Validation checklist:
 
 ## Troubleshooting
 
+- Submodule folder (`.github/`) is empty:
+  - Run `git submodule update --init --recursive`.
+- Submodule not picking up latest changes:
+  - Run `git submodule update --remote .github`, then commit the update.
 - Template not found:
   - Check relative paths in agent mapping.
-  - Ensure clone/copy path matches README examples.
+  - Ensure submodule/copy path matches README examples.
 - Agent loads but output is incomplete:
 	- Verify required assets exist for that agent (`input` + `report`).
   - Ensure request includes clear scope and expected output.
