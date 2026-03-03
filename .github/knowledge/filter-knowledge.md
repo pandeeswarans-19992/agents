@@ -1,65 +1,50 @@
 # Filter Knowledge
 
-Purpose: Define what the Filter API is, how fields become filterable, the predicate
-model, the filtering strategies, and the rules agents must apply when diagnosing
-filter API behaviour or suggesting filtering strategies.
+Purpose: Define what the Field Filter API is, how to construct Java predicates for
+field filtering, the filtering strategies, scenario guidance for choosing the right API,
+recommended filterable properties, best practices, and the rules agents must apply when
+diagnosing filter API behaviour or suggesting filtering strategies.
 Agents must load this file alongside `field-context.md`, `field-knowledge.md`, and
 `module-knowledge.md` whenever a task involves the Filter API.
-For CrmField MySQL schema (column definitions, deprecated columns) and Java field API
-context, refer to `.github/knowledge/field-context.md`.
+For CrmField MySQL schema (column definitions, deprecated columns), Java field API
+inventory, architecture files, and MySQL diagnostic query templates,
+refer to `.github/knowledge/field-context.md`.
 
 ---
 
-## What Is the Filter API?
+## What Is the Field Filter API?
 
-The **Filter API** is a platform-level query interface that lets callers retrieve
-module records matching one or more field-level conditions called **predicates**.
-A single Filter API request may combine multiple predicates joined by logical
-operators (`AND` / `OR`).
+The **Field Filter API** is a tool that allows callers to fetch a list of fields by
+applying specific, chainable filter conditions using `Predicate<AbstractField>` lambdas.
+This enables meta-driven, efficient field retrieval based on business logic rather than
+hard-coded field lists.
 
 Key characteristics:
 
-- Every filterable field in a module is addressable by its `field_name`.
-- Each field supports a fixed set of comparison operators determined by its field type.
-- Only fields explicitly marked as filterable in the database appear in Filter API
-  responses and are accepted as predicate targets.
-- Fields that are hidden, disabled, or not marked filterable are silently excluded;
-  no error is raised for a missing field in a filter response listing.
+- Every field in a module is addressable and can be filtered by its metadata properties.
+- Filters are composed using Java `Predicate<AbstractField>` lambdas (expression or method reference).
+- Fields that are inactive or not present are silently excluded by the API.
 
 ---
 
-## Filter API Request Structure
+## Java Predicate Reference by AbstractField Property
 
-```
-GET /filter/{module}?predicate=<field_name>+<operator>+<value>[&predicate=...]&logic=AND|OR
-```
+Use the following metadata properties of `AbstractField` when building predicate lambdas.
+Agents must recommend properties from this table when suggesting or validating predicates.
 
-| Parameter   | Description |
-|-------------|-------------|
-| `module`    | Module API name (e.g. `doctor`, `patient`, `payment`) |
-| `predicate` | One or more `field_name operator value` conditions |
-| `logic`     | `AND` (default) or `OR` to join multiple predicates |
-| `fields`    | Comma-separated list of field names to return in the response |
-| `page`      | 1-based page number for pagination |
-| `per_page`  | Records per page (default 20, max 200) |
-
----
-
-## Predicate Operators by Field Type
-
-The set of valid comparison operators depends on the logical field type.
-Agents must use this table when suggesting or validating filter predicates.
-
-| Field Type | Supported Operators                          | Notes |
-|------------|----------------------------------------------|-------|
-| long       | `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `in`, `not_in` | Includes PK and FK fields |
-| number     | `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `in`, `not_in` | |
-| boolean    | `eq`, `ne`                                   | Value must be `true` or `false` |
-| singleline | `eq`, `ne`, `contains`, `starts_with`, `ends_with`, `in`, `not_in` | Case-insensitive by default |
-| textarea   | `contains`                                   | Full-text style; expensive on large tables |
-| picklist   | `eq`, `ne`, `in`, `not_in`                   | Value must match a valid `picklist_value.value_key` |
-
-Operators not in the list above are rejected with a `400 Bad Request`.
+| Property | Method | Use Case |
+|----------|--------|----------|
+| Internal state flag | `isInternalState()` | Exclude fields used for internal system processes |
+| Computed flag | `isComputed()` | Exclude formula / calculated fields from predicates |
+| Mandatory flag | `isMandatory()` | Include only fields that require a value |
+| Sortable flag | `isSortable()` | Include only fields that support sorting |
+| Basic flag | `isBasic()` | Include only fundamental, out-of-the-box fields |
+| Identifier flag | `isIdentifier()` | Include only fields acting as unique identifiers |
+| Source type | `getSourceType()` | Filter by origin: `SYSTEM`, `CUSTOM`, etc. |
+| Field type | `getNewFieldType()` | Filter by data type (use this — not deprecated `getType()`, `getFieldType()`, `getUiType()`) |
+| API name | `getApiName()` | Target a specific field by name (last resort) |
+| Custom field | `isCustomField()` | Include only user-created custom fields |
+| Indexed | `isIndexed()` | Include only fields with a database index |
 
 ---
 
@@ -82,125 +67,131 @@ Agents must walk through all conditions before concluding a root cause.
 
 Agents must recommend the appropriate strategy based on the use case.
 
-### Strategy 1 — Exact Match Filter
+### Strategy 1 — Whitelisted Filtering (Inclusion)
 
-Use when: the predicate value must equal a stored value exactly.
-Best for: `long` (ID lookups), `boolean` flags, `picklist` controlled vocabularies.
+An **opt-in** strategy that includes only a specific set of fields. All other fields
+are ignored. Use when you know the exact fields you need — safer because it prevents
+unexpected new fields from being processed.
 
-```
-predicate=specialist+eq+Cardiology
-```
-
-### Strategy 2 — Range Filter
-
-Use when: the query targets a numeric or identifier range.
-Best for: `number`, `long` date-encoded timestamps.
-
-```
-predicate=age+gte+30&predicate=age+lte+60&logic=AND
+**Example 1 — Filter by Field ID:**
+```java
+Set<Long> requiredFieldIds = Set.of(101L, 102L, 105L);
+List<AbstractField> fields = new OrgFieldAPIImpl().getAbstractFields(requiredFieldIds);
 ```
 
-### Strategy 3 — Text Search Filter
-
-Use when: the caller needs partial text matching.
-Best for: `singleline` fields; avoid `textarea` on large tables unless indexed.
-
-```
-predicate=name+contains+Smith
+**Example 2 — Filter by API Name:**
+```java
+Predicate<AbstractField> filter = field -> "channel".equals(field.getApiName());
+List<AbstractField> fields = new OrgFieldAPIImpl().getAbstractFields(MODULE.TICKETS.getName(), departmentId, filter);
 ```
 
-### Strategy 4 — Set Filter
-
-Use when: the caller wants to match any value from a known set.
-Best for: `picklist`, `long` FK fields, `singleline` with a known enumeration.
-
-```
-predicate=specialist+in+Cardiology,Neurology,Orthopedics
+**Example 3 — Filter by Metadata (e.g. indexed datetime fields):**
+```java
+Predicate<AbstractField> filter = field -> field.isIndexed() && field.getNewFieldType() == DATETIME;
+List<AbstractField> fields = new OrgFieldAPIImpl().getAbstractFields(MODULE.TICKETS.getName(), departmentId, filter);
 ```
 
-### Strategy 5 — Compound Filter
+### Strategy 2 — Blacklisted Filtering (Exclusion)
 
-Use when: multiple conditions must all be true (AND) or any one can be true (OR).
-Best for: search screens combining status + category + text filters.
+An **opt-out** strategy that excludes certain fields and returns everything else.
+Use for future-proofing: new fields are automatically included. Your code must be
+prepared to handle any new fields that are not explicitly blocked.
 
+**Example — Exclude computed fields:**
+```java
+Predicate<AbstractField> filter = field -> !field.isComputed();
+List<AbstractField> fields = new OrgFieldAPIImpl().getAbstractFields(MODULE.TICKETS.getName(), departmentId, filter);
 ```
-predicate=is_active+eq+true&predicate=specialist+eq+Cardiology&logic=AND
+
+**Example — Custom fields, optionally excluding unused ones:**
+```java
+Predicate<AbstractField> filter = AbstractField::isCustomField;
+
+if (!isUnUsedFieldsNeeded) {
+    Long layoutId = layoutApi.getLayoutsByDepartmentIds(CrmConstants.MODULE_AGENT, null)
+                             .get(0)
+                             .getLayoutId();
+    Set<Long> unUsedFieldIds = layoutApi.getUnUsedAbstractFieldsInLayout(layoutId)
+                                        .stream()
+                                        .map(AbstractField::getId)
+                                        .collect(Collectors.toSet());
+    filter = field -> field.isCustomField() && !unUsedFieldIds.contains(field.getFieldId());
+}
+return orgFieldApi.getAbstractFields(module, null, filter);
 ```
-
-### Strategy Selection Guide
-
-| Use Case Pattern | Recommended Strategy |
-|-----------------|---------------------|
-| Find record by ID or FK reference | Strategy 1 (Exact Match) |
-| Date or numeric range search | Strategy 2 (Range) |
-| Partial name / keyword search | Strategy 3 (Text Search) |
-| Dropdown multi-select filter | Strategy 4 (Set Filter) |
-| Multi-criteria search form | Strategy 5 (Compound) |
-| Status + category dashboard filter | Strategy 5 (Compound) |
 
 ---
 
-## MySQL Diagnostic Query Templates
+## How to Choose the Right API
 
-Agents must use these parameterised templates when executing diagnostic queries.
-Always replace `?` with the actual module API name or field name from the user request.
-Never expose credentials in reports; reference them from the environment config only.
+| Scenario | Recommended API | Reason |
+|----------|----------------|--------|
+| Criteria and Query Store — query construction | `OrgFieldAPI` | Configuration context; cannot use permission API |
+| Criteria and Query Store — UI field listing | `LayoutFieldAPI` | Show fields from the layout in the UI |
+| Table Views and Reports | `FieldPermissionAPI` | Field access must be restricted by user profile |
+| Blueprint Transaction Forms | `LayoutFieldAPI` | Show fields associated with the ticket's layout |
 
-### Q-01 — Resolve MODULEID from SYSTEMNAME
+---
 
-```sql
-SELECT MODULEID, NAME, SYSTEMNAME, PRESENCE
-FROM ZD_Modules
-WHERE SYSTEMNAME = ?;
+## Best Practices for Predicate Construction
+
+### 1. Avoid Internal Metadata in Filters
+
+Never use methods that expose internal structural details in predicates. They lead
+to fragile logic that breaks when the underlying system changes.
+
+| Method to Avoid        | Alternate |
+|------------------------|-----------|
+| `getTableName()`       | N/A — do not use |
+| `getColumnName()`      | N/A — do not use |
+| `getType()`            | `getNewFieldType()` |
+| `getFieldType()`       | `getNewFieldType()` |
+| `getUiType()`          | `getNewFieldType()` |
+| `getUITypeForCreate()` | `getNewFieldType()` |
+| `getFieldLabel()`      | `getApiName()` |
+
+**Recommended:**
+```java
+new OrgFieldApiImpl().getAbstractFields(MODULE.TICKETS.getName(), null,
+    field -> !field.isInternalState() && !field.isComputed());
 ```
 
-### Q-02 — Check all filter properties for a specific field
-
-```sql
-SELECT f.FIELDID, f.APINAME, f.TYPE,
-       f.ISPRESENCE,
-       f.IS_INTERNAL_STATE, f.IS_COMPUTED
-FROM CrmField f
-INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
-WHERE m.SYSTEMNAME = ?
-  AND f.APINAME = ?;
+**Problematic — Do NOT use:**
+```java
+var caseColumnNames = Set.of(CRMCASE.SUBJECT, ...);
+var filter = field -> field.getTableName().equals(CRMCASE.TABLE)
+                   && caseColumnNames.contains(field.getColumnName());
+new OrgFieldApiImpl().getAbstractFields(MODULE.TICKETS.getName(), null, filter);
 ```
 
-### Q-03 — List all present/active fields for a module
+### 2. Exclude Internal State Fields by Default
 
-```sql
-SELECT f.APINAME, f.TYPE,
-       f.ISPRESENCE,
-       f.IS_INTERNAL_STATE, f.IS_COMPUTED
-FROM CrmField f
-INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
-WHERE m.SYSTEMNAME = ?
-  AND f.ISPRESENCE = 1
-ORDER BY f.APINAME;
+Almost every predicate should start by excluding internal state fields.
+These fields (`responseSlaType`, `slaViolationType`, `isPresence`, etc.) are generally
+not needed in UI or business logic.
+
+```java
+Predicate<AbstractField> filter = field -> !field.isInternalState() && /* additional conditions */;
 ```
 
-### Q-04 — List hidden fields for a module
+### 3. Limit the Use of Sets and Maps
 
-```sql
-SELECT f.APINAME, f.TYPE,
-       f.ISPRESENCE
-FROM CrmField f
-INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
-WHERE m.SYSTEMNAME = ?
-  AND f.ISPRESENCE = 0
-ORDER BY f.APINAME;
-```
+Avoid building large `Set` or `Map` structures inside predicates unless absolutely
+necessary. Prefer metadata-driven boolean flags on `AbstractField`.
 
-### Q-05 — List internal state and computed fields for a module
+### 4. Use Expression Lambdas for Filtering
 
-```sql
-SELECT f.APINAME, f.TYPE,
-       f.IS_INTERNAL_STATE, f.IS_COMPUTED, f.ISPRESENCE
-FROM CrmField f
-INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
-WHERE m.SYSTEMNAME = ?
-  AND (f.IS_INTERNAL_STATE = 1 OR f.IS_COMPUTED = 1)
-ORDER BY f.APINAME;
+Prefer concise lambda expressions over anonymous inner classes to keep predicates
+readable and composable.
+
+```java
+// Composable predicates
+Predicate<AbstractField> notInternal = field -> !field.isInternalState();
+Predicate<AbstractField> notComputed = field -> !field.isComputed();
+Predicate<AbstractField> combined    = notInternal.and(notComputed);
+
+List<AbstractField> fields = new OrgFieldAPIImpl()
+    .getAbstractFields(MODULE.TICKETS.getName(), departmentId, combined);
 ```
 
 ---

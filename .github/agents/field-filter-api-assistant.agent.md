@@ -23,10 +23,12 @@ governance rules, and determinism checklist that apply to all agents.
 ### 0.1 Additional Knowledge Files
 
 Load these files in addition to the base contract knowledge lens:
-- `.github/knowledge/filter-knowledge.md` — Filter API predicates, visibility rules,
-  diagnostic query templates, filtering strategies, and MCP integration contract.
+- `.github/knowledge/filter-knowledge.md` — Field Filter API introduction, Java predicate
+  reference, filtering strategies, scenario guidance, best practices, field visibility
+  checklist, credential configuration, and MCP integration contract.
 - `.github/knowledge/field-context.md` — CrmField MySQL schema (active and deprecated
-  columns), Java field API inventory, architecture files, and Field Filter API guide.
+  columns), Java field API inventory, architecture files, core filtering APIs,
+  predicate construction syntax, and MySQL diagnostic query templates.
 
 ---
 
@@ -139,7 +141,7 @@ Reason: <why this API is recommended for this use case>
 
 **Step 2 — Understand Predicate and Construct MySQL Query**
 - Parse the predicate to extract the field name, operator, and value.
-- Using the field context from `filter-knowledge.md`, construct the MySQL query
+- Using the field context from `field-context.md`, construct the MySQL query
   that corresponds to the predicate (e.g. using Q-02 to check field visibility settings).
 
 **Step 3 — Fetch Field from MySQL**
@@ -174,7 +176,7 @@ Reason:
 
 **Step 3 — Convert Predicate to MySQL Query**
 - Convert the provided predicate into the corresponding MySQL query using the
-  templates in `filter-knowledge.md`.
+  templates in `field-context.md`.
 
 **Step 4 — Execute MySQL Query**
 - Execute the MySQL query using the `execute_mysql_query` tool.
@@ -187,7 +189,7 @@ Reason:
 
 ### 5. MySQL Tool Usage Rules
 
-- All queries must use the parameterised templates from `filter-knowledge.md` (Q-01 through Q-05).
+- All queries must use the parameterised templates from `field-context.md` (Q-01 through Q-05).
 - Only read-only (`SELECT`) queries are permitted.
 - The agent must never execute `INSERT`, `UPDATE`, `DELETE`, `DROP`, or `ALTER` statements.
 - Credentials must be resolved from environment variables; they must not be written
