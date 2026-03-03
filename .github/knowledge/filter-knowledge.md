@@ -259,65 +259,68 @@ configuration using the following keys:
 | `DB_PORT`               | MySQL port (default `3306`) |
 | `DB_NAME`               | Target database name |
 | `DB_USER`               | Read-only service account username |
-| `DB_PASSWORD`           | Service account password (never logged or written to reports) |
+| `DB_PASSWORD`           | Service account password (never logged or written to chat output) |
 
 The agent must request these credentials from the user or environment if they are
 not already available in the session context. The password must be used only for
-the diagnostic query execution tool call and must not appear in any report output.
+the diagnostic query execution tool call and must not appear in any chat output.
 
 ---
 
-## MCP Server Integration — Fields Team Chat
+## MCP Server Integration — Fields Team Support Chat
 
-The agent integrates with the MCP (Message Channel Protocol) server to post
-diagnostic query results and filter API recommendations to the designated Fields
-team group chat.
+The MCP (Message Channel Protocol) server integration is used **only for escalation**:
+when the Filter API agent cannot resolve the user query, the user contacts the module
+owner and that process posts the unresolved query to the Fields team support chat via
+the OAuth-authenticated MCP server.
 
 ### Authentication
 
-| Config Key            | Description |
-|-----------------------|-------------|
-| `MCP_SERVER_URL`      | Base URL of the MCP server |
-| `MCP_AUTH_TOKEN`      | Bearer token for authenticating with the MCP server |
-| `MCP_CHAT_ID`         | Target group chat identifier for the Fields team |
+Authentication is handled via **OAuth**. The agent must obtain and use an OAuth token
+to authenticate with the MCP server. The token must never be logged or written to any
+chat output or escalation message body.
 
-Authentication is handled via a `Bearer` token in the `Authorization` header:
+| Config Key          | Description |
+|---------------------|-------------|
+| `MCP_SERVER_URL`    | Base URL of the MCP server |
+| `MCP_OAUTH_TOKEN`   | OAuth access token for authenticating with the MCP server |
+| `MCP_CHAT_ID`       | Target group chat identifier for the Fields team support chat |
+
+Authentication header:
 
 ```
-Authorization: Bearer <MCP_AUTH_TOKEN>
+Authorization: Bearer <MCP_OAUTH_TOKEN>
 ```
 
-The agent must validate that `MCP_AUTH_TOKEN` and `MCP_CHAT_ID` are available before
-attempting any message post. If either is missing, escalate to the user and skip the
-MCP post step.
+The agent must validate that `MCP_OAUTH_TOKEN` and `MCP_CHAT_ID` are available before
+attempting any message post. If either is missing, inform the user and stop the
+escalation step.
 
-### Post Message Contract
+### Escalation Message Contract
 
 ```
 POST <MCP_SERVER_URL>/chats/<MCP_CHAT_ID>/messages
-Authorization: Bearer <MCP_AUTH_TOKEN>
+Authorization: Bearer <MCP_OAUTH_TOKEN>
 Content-Type: application/json
 
 {
-  "type": "filter_api_analysis",
+  "type": "filter_api_unresolved_query",
   "module": "<module_api_name>",
-  "field": "<field_name — set to null when request is not field-specific>",
-  "summary": "<one-line summary of finding>",
-  "diagnostic_query": "<SQL query executed>",
-  "result": "<JSON-serialised query result rows>",
-  "recommendation": "<action to resolve the issue>",
+  "field": "<field_name — set to null when not field-specific>",
+  "unresolved_query": "<the user query or question that the agent could not resolve>",
+  "context": "<relevant context collected during the agent session>",
   "timestamp": "<ISO-8601 UTC timestamp>"
 }
 ```
 
-The `diagnostic_query` field must not include the database password or any credential.
-The `result` field must include only the data columns listed in Q-01 through Q-05;
-no PII or secret column values may be included.
+The `unresolved_query` and `context` fields must not include database passwords or
+OAuth tokens. Include only the information needed for the module owner to understand
+and respond to the query.
 
-### MCP Post Behaviour Rules
+### MCP Escalation Rules
 
-- Post once per diagnostic session; do not post for every individual query.
-- If the MCP post fails (non-2xx response), log the failure in the report and
-  continue; do not retry more than once.
-- Include only the final consolidated finding in the post body, not intermediate
-  diagnostic steps.
+- Use the MCP channel only when the agent cannot resolve the user query.
+- Do not post intermediate diagnostic results or successful findings to MCP.
+- If the MCP post fails (non-2xx response), inform the user of the failure; do not
+  retry more than once.
+- Post once per escalation; do not send multiple messages for the same unresolved query.

@@ -9,47 +9,64 @@ This guide shows how to phrase requests to get the best output from the Filter A
 
 | Capability | Description |
 |---|---|
-| Filter Suggestion | Given a use case, suggest the correct Filter API predicates, operators, and strategy |
+| Filter Suggestion | Understand a use case and recommend which Filter API to use |
 | Field Visibility Debug | Diagnose why a specific field appears or does not appear in the Filter API |
-| Field Inventory | List all filterable (and optionally non-filterable) fields for a module |
-| MySQL Diagnostics | Execute read-only diagnostic queries against the live database |
-| MCP Chat Notification | Post consolidated findings to the Fields team group chat |
+| Field Listing / Query | Execute a MySQL query for a module's fields and display results as a table |
+| MCP Escalation | When the agent cannot resolve a query, escalate to the module owner via OAuth-authenticated MCP support chat |
 
 ---
 
 ## FILTER_SUGGESTION — Example Queries
 
-> "I need to build a search screen that lets users find active doctors by specialty and partial name.
-> The doctor table has about 2 million rows. What Filter API predicates and strategies should I use?"
+> "I need to display fields in a form area for the doctor module. Which API should I use?"
 
-> "We want to filter patients by age range and admission status. Which fields and operators
-> should we use? Are there any performance risks?"
+> "We want to show patient records in a list view. What Filter API is recommended?"
 
-> "Give me an example Filter API request URL for finding all payments with status 'pending'
-> or 'failed' made after a specific date."
+> "Which API should I use to build a search screen for payments?"
+
+**Agent output format:**
+```
+Output:
+Suggest API: LayoutFieldAPI
+Reason: You will display the fields in the form area so that you must use the LayoutFieldAPI
+```
 
 ---
 
 ## FIELD_VISIBILITY_DEBUG — Example Queries
 
-> "The field `date_of_birth` on the `patient` module isn't showing up in the Filter API
-> field listing. Can you find out why?"
+> "The field `specialist` on the `doctor` module isn't showing up when I use the predicate
+> `specialist+eq+Cardiology`. Can you find out why?"
 
-> "I tried the predicate `specialist+eq+Cardiology` but the Filter API returns a 400 error.
-> The specialist field exists on the doctor module. What's going wrong?"
+> "I tried the predicate `date_of_birth+gte+19900101` on the `patient` module but the field
+> is not in the Filter API response. What's the reason?"
 
-> "Why can't I filter the `payment` module by the `notes` field? It exists in the database
-> but doesn't appear when I list filterable fields."
+> "Why is the `notes` field on the `payment` module not filterable?
+> My predicate was `notes+contains+urgent`."
+
+**Agent output format:**
+```
+That field data:
+< field record from MySQL >
+
+MySQL query from the predicate:
+< constructed SQL query >
+
+Reason:
+< which condition > — this condition is the reason the field is shown or hidden
+```
 
 ---
 
 ## FILTER_FIELD_LISTING — Example Queries
 
-> "Give me a complete list of all filterable fields for the `doctor` module, including
-> which operators are supported for each."
+> "Show me all fields for the `doctor` module where `is_filterable = 1`."
 
-> "List all fields on the `patient` module — both filterable and non-filterable — so I
-> can decide which ones need to be enabled for the new search feature."
+> "I want to apply the predicate `is_active+eq+1` on the `patient` module — show me the results."
+
+> "Run this MySQL query for me: SELECT * FROM field WHERE module_id = 5 AND is_filterable = 1"
+
+**Agent output:** Results are printed as a markdown table in the chat window.
 
 ---
 
@@ -62,24 +79,24 @@ Minimum required inputs per request type:
 | Request Type | Required |
 |---|---|
 | FILTER_SUGGESTION | module API name, use case description |
-| FIELD_VISIBILITY_DEBUG | module API name, field name, MySQL credentials (from env) |
+| FIELD_VISIBILITY_DEBUG | module API name, field name, predicate, MySQL credentials (from env) |
 | FILTER_FIELD_LISTING | module API name, MySQL credentials (from env) |
 
 ### Tips for Better Queries
 
-- **Name the module**: always include the module's API-level name (e.g. `doctor`, not `Doctor` or `doctors`).
-- **Describe the use case precisely**: "find active Cardiology doctors by name" is more useful than "filter doctors".
-- **Include the predicate you tried**: for debugging, paste the exact predicate string that failed.
-- **State the observed vs expected behaviour**: the more specific, the faster the diagnosis.
-- **Confirm environment credentials**: ensure `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`
-  are set in the environment before requesting a debug or listing run.
+- **Name the module**: always include the module's API-level name (e.g. `doctor`, not `Doctor`).
+- **Describe the use case goal**: for Filter Suggestion, state what you want to achieve
+  (e.g. "display fields in a form", "build a search screen") — not which fields to filter.
+- **Include the predicate**: for Field Visibility Debug, always include the exact predicate you tried.
+- **Confirm environment credentials**: ensure `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`,
+  and `DB_PASSWORD` are set in the environment before requesting a debug or listing run.
 
 ---
 
 ## Setting Up MySQL Credentials
 
 The agent resolves credentials from environment variables. Set the following before running
-any diagnostic request:
+any diagnostic or listing request:
 
 ```
 DB_HOST=<mysql-server-host>
@@ -90,50 +107,34 @@ DB_PASSWORD=<service-account-password>
 ```
 
 **Important:**
-- Use a **read-only** service account. The agent only executes `SELECT` queries
-  and will refuse to run write operations.
+- Use a **read-only** service account. The agent only executes `SELECT` queries.
 - Never paste the password into the agent chat or template; supply it only through
   the environment or a secrets manager.
 
 ---
 
-## Setting Up MCP Chat Notification
+## Setting Up MCP Escalation
 
-To enable automatic posting of findings to the Fields team group chat, set:
+The agent uses MCP only to escalate queries it cannot resolve to the module owner.
+Set the following environment variables to enable escalation:
 
 ```
 MCP_SERVER_URL=<mcp-server-base-url>
-MCP_AUTH_TOKEN=<bearer-token-for-mcp-server>
-MCP_CHAT_ID=<fields-team-chat-id>
+MCP_OAUTH_TOKEN=<oauth-token-for-mcp-server>
+MCP_CHAT_ID=<fields-team-support-chat-id>
 ```
 
 **Important:**
-- The `MCP_AUTH_TOKEN` is never written to reports or logged; supply it only through
-  the environment.
-- If any MCP variable is missing, the agent skips the notification step and notes
-  it in the report. The diagnostic analysis still completes.
+- Authentication uses **OAuth**. The `MCP_OAUTH_TOKEN` is never written to any output.
+- If any MCP variable is missing, the agent informs the user and skips the escalation.
+- MCP is not used for successful findings — only for unresolved queries.
 
 ---
 
-## Where to Find the Report
+## Understanding Field Visibility Diagnostics
 
-Generated reports are saved at:
-
-```
-ai-research-report/filter-api/<report-name>_v<version-number>.md
-```
-
-Examples:
-
-- `ai-research-report/filter-api/field-visibility-debug_v1.md`
-- `ai-research-report/filter-api/filter-suggestion-doctor_v1.md`
-- `ai-research-report/filter-api/filter-field-listing-patient_v2.md`
-
----
-
-## Understanding Filter API Diagnostics
-
-When a field is missing from the Filter API, the agent checks these conditions in order:
+When a field is missing from the Filter API, the agent checks these conditions
+(using the MySQL query templates Q-01 through Q-05 in `filter-knowledge.md`):
 
 1. Is the **module** active and filter-enabled?
 2. Is the **field** active (`is_active = 1`)?
@@ -141,9 +142,6 @@ When a field is missing from the Filter API, the agent checks these conditions i
 4. Is the field visible in the listing (`filter_visible = 1`)?
 5. Is the **operator** in the supported set for the field type?
 6. For `picklist` fields: is the predicate **value key** an active picklist value?
-
-Each condition maps to a specific MySQL query template (Q-01 through Q-05) documented in
-`.github/knowledge/filter-knowledge.md`.
 
 ---
 

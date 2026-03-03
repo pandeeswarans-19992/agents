@@ -18,9 +18,6 @@ These files are the single source of truth for shared context.
   `.github/knowledge/module-knowledge.md`
 - Field knowledge (domain glossary, business rules, data field definitions, state machines):
   `.github/knowledge/field-knowledge.md`
-- Filter knowledge (Filter API field properties, predicate operators, MySQL diagnostic queries,
-  field visibility rules, MCP integration contract):
-  `.github/knowledge/filter-knowledge.md` _(load when task involves the Filter API)_
 
 For every report, include evidence from:
 

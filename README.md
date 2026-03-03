@@ -19,7 +19,7 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
   - `base.agent.md` – shared base contract (knowledge lens, governance, escalation rules)
   - agent definitions (`*.agent.md`):
     - `research.agent.md` – call-hierarchy driven code analysis, impact assessment, migration audits
-    - `filter-api.agent.md` – Filter API replacement assistant (filter suggestion, field visibility debug, MySQL diagnostics, MCP chat notification)
+    - `filter-api.agent.md` – Filter API replacement assistant (filter suggestion, field visibility debug, MySQL diagnostics, MCP escalation for unresolved queries)
 - `.github/docs/`
   - per-agent guides (`*.guide.md`):
     - `research.guide.md` – example queries and tips for the research agent
@@ -45,7 +45,6 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
     - `new-feature-analysis-report-template.md`
     - `feature-enhancement-report-template.md`
     - `usecase-alignment-report-template.md`
-    - `filter-api-report-template.md` – Filter API agent report output
 
 ## Add a New Agent
 
