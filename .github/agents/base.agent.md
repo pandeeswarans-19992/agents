@@ -3,19 +3,7 @@
 Purpose: Abstract base contract inherited by all agents in this repository.
 Every agent must load this file before executing and must not duplicate its content.
 
-This file contains **common knowledge only**. It does not implement any behavior and
-must never be used to make changes to the codebase.
-
----
-
-### Code Change Prohibition (All Agents)
-
-- The base agent must not implement any changes to the codebase.
-- The base agent provides shared knowledge, rules, and contracts for all agents only.
-- All agents that load this contract inherit this prohibition:
-  - No agent may write to, modify, delete, or execute changes against application source files.
-  - No agent may run terminal commands that alter the state of the repository or application.
-  - Read and analyze operations are permitted; write operations against application code are not.
+This file contains **common knowledge only**. It does not implement any behavior.
 
 ---
 

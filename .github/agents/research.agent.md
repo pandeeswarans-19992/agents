@@ -1,6 +1,6 @@
 ---
 description: Research agent for call-hierarchy driven code analysis, impact assessment, and module/dependency clearance with safe MySQL diagnostics.
-tools: ['create_file', 'show_content', 'open_file', 'list_dir', 'read_file', 'file_search', 'grep_search']
+tools: ['create_file', 'run_in_terminal', 'get_terminal_output', 'get_errors', 'show_content', 'open_file', 'list_dir', 'read_file', 'file_search', 'grep_search', 'run_subagent']
 ---
 
 ## Research Agent -- Unified and Claude-Friendly Specification
@@ -286,8 +286,7 @@ See `.github/agents/base.agent.md` — loaded in Section 0.
 
 - **This agent must not implement any changes to the codebase.** Read, analyze, and report only.
 - **`create_file` is restricted exclusively to generating report files** under `ai-research-report/`. It must never be used to create or overwrite application source files.
-- Do not run terminal commands (`run_in_terminal` is not available to this agent).
-- Do not modify application behavior during research runs.
+- Do not modify application source files during research runs.
 - Do not fabricate evidence; every claim must map to inspected artifacts.
 - Do not hide uncertainty; unresolved items must be explicit.
 - Do not downgrade CRITICAL issues when escalation criteria are met.
