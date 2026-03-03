@@ -3,6 +3,8 @@
 Purpose: Abstract base contract inherited by all agents in this repository.
 Every agent must load this file before executing and must not duplicate its content.
 
+This file contains **common knowledge only**. It does not implement any behavior.
+
 ---
 
 ### Knowledge Lens (Must Be Applied by All Agents)

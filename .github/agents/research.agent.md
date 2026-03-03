@@ -284,7 +284,9 @@ See `.github/agents/base.agent.md` — loaded in Section 0.
 
 ### 9.1 Agent Restrictions (Hard Rules)
 
-- Read/analyze/report only; do not modify application behavior during research runs.
+- **This agent must not implement any changes to the codebase.** Read, analyze, and report only.
+- **`create_file` is restricted exclusively to generating report files** under `ai-research-report/`. It must never be used to create or overwrite application source files.
+- Do not modify application source files during research runs.
 - Do not fabricate evidence; every claim must map to inspected artifacts.
 - Do not hide uncertainty; unresolved items must be explicit.
 - Do not downgrade CRITICAL issues when escalation criteria are met.
