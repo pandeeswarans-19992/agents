@@ -93,9 +93,16 @@ When the agent cannot resolve the user query:
 - Inform the user that the query needs to be escalated to the module owner.
 - The module owner process will post the unresolved query to the Fields team support
   chat via the OAuth-authenticated MCP server.
-- Required config: `MCP_SERVER_URL`, `MCP_OAUTH_TOKEN`, `MCP_CHAT_ID`
-  — resolve from environment; never log or expose the OAuth token.
+- Required config (resolve from environment; never log or expose the OAuth token):
+
+| Config Key        | Description |
+|-------------------|-------------|
+| `MCP_SERVER_URL`  | Base URL of the MCP server |
+| `MCP_OAUTH_TOKEN` | OAuth access token for authenticating with the MCP server |
+| `MCP_CHAT_ID`     | Target group chat identifier for the Fields team support chat |
+
 - If any MCP config is missing, inform the user and stop the escalation step.
+- See `filter-knowledge.md` for the full escalation message contract and behaviour rules.
 
 ---
 

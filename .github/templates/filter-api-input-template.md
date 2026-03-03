@@ -55,6 +55,21 @@ Select one:
 
 ---
 
+## Section E — MCP Server Configuration (for escalation)
+
+If the agent cannot resolve your query, the module owner process will post it to the
+Fields team support chat using the MCP server. Ensure these are set in your environment:
+
+| Config Key        | Description |
+|-------------------|-------------|
+| `MCP_SERVER_URL`  | Base URL of the MCP server |
+| `MCP_OAUTH_TOKEN` | OAuth access token for the MCP server (never paste here — use environment only) |
+| `MCP_CHAT_ID`     | Fields team support chat identifier |
+
+If these are not set, the agent will inform you and skip the escalation step.
+
+---
+
 ## Input Examples
 
 ### Example 1 — FILTER_SUGGESTION
