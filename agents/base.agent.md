@@ -3,6 +3,8 @@
 Purpose: Abstract base contract inherited by all agents in this repository.
 Every agent must load this file before executing and must not duplicate its content.
 
+This file contains **common knowledge only**. It does not implement any behavior.
+
 ---
 
 ### Knowledge Lens (Must Be Applied by All Agents)
@@ -18,6 +20,8 @@ These files are the single source of truth for shared context.
   `.github/knowledge/module-knowledge.md`
 - Field knowledge (domain glossary, business rules, data field definitions, state machines):
   `.github/knowledge/field-knowledge.md`
+- Field context (CrmField MySQL schema, Java field API inventory, architecture files, Field Filter API guide):
+  `.github/knowledge/field-context.md`
 
 For every report, include evidence from:
 
