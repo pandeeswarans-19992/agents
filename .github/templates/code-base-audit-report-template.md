@@ -235,4 +235,13 @@ _(Delete rows for domains that have no suggestions. Do not include empty placeho
 | Scalability bottleneck identification | |
 | Architecture maturity assessment | |
 
+## Appendix C — Knowledge Coverage
+
+| Domain | Applied? | Key Observations |
+|---|---|---|
+| Architecture | | |
+| Design Patterns (incl. anti-patterns) | | |
+| Data Structure Fitness | | |
+| Algorithm Complexity / Hotspots | | |
+
 

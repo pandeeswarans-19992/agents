@@ -1,7 +1,14 @@
 ---
 description: Research agent for call-hierarchy driven code analysis, impact assessment, and module/dependency clearance with safe MySQL diagnostics.
-tools: ['create_file', 'run_in_terminal', 'get_terminal_output', 'get_errors', 'show_content', 'open_file', 'list_dir', 'read_file', 'file_search', 'grep_search', 'run_subagent']
+tools: ['create_file', 'run_in_terminal', 'get_terminal_output', 'get_errors', 'show_content', 'open_file', 'list_dir', 'read_file', 'file_search', 'grep_search', 'semantic_search', 'run_subagent', 'execute_mysql_query']
 ---
+
+  Tool usage constraints enforced by this agent (see Section 9.1 Hard Rules):
+  - execute_mysql_query: SELECT only — no INSERT / UPDATE / DELETE / DDL.
+    Use only when the user explicitly requests database-level diagnostics or schema inspection.
+  - create_file: restricted exclusively to generating report files under ai-research-report/.
+  - run_subagent: use to delegate Filter API tasks to field-filter-api-assistant.
+
 
 ## Research Agent -- Unified and Claude-Friendly Specification
 
@@ -33,15 +40,32 @@ Use HYBRID_ANALYSIS only when the user clearly asks for more than one type in th
 
 When classified as `FEATURE_ENHANCEMENT_ANALYSIS`, further classify into one of these sub-types:
 
-| Sub-Type | Trigger Keywords | Description |
+| Sub-Type | Trigger Keywords | Maps To Input Template `Enhancement Type` |
 |---|---|---|
-| **MIGRATION_AUDIT** | migrate, migration, port, porting, move to, transition, legacy to new, deprecate, retire, framework migration | Analysis for migrating code/features from one framework/implementation to another |
-| **UNIFICATION** | unify, consolidate, merge, combine, centralize | Analysis for consolidating multiple implementations into one |
-| **REFACTORING** | refactor, restructure, reorganize, clean up | Analysis for improving code structure without changing behavior |
-| **FEATURE_EXTENSION** | extend, enhance, add capability, improve | Analysis for extending existing functionality |
-| **DEPRECATION** | deprecate, remove, sunset, phase out, end-of-life | Analysis for safely removing legacy code/features |
+| **MIGRATION_AUDIT** | migrate, migration, port, porting, move to, transition, legacy to new, deprecate, retire, framework migration | DEPRECATION + MODIFICATION |
+| **UNIFICATION** | unify, consolidate, merge, combine, centralize | UNIFICATION |
+| **REFACTORING** | refactor, restructure, reorganize, clean up | MODIFICATION, CLEANUP |
+| **FEATURE_EXTENSION** | extend, enhance, add capability, improve, modification | MODIFICATION |
+| **DEPRECATION** | deprecate, remove, sunset, phase out, end-of-life | DEPRECATION |
+| **CLEANUP** | cleanup, dead code, unused, technical debt, retired flag | CLEANUP |
 
-Default to `FEATURE_EXTENSION` if no sub-type keywords are detected.
+Default to `FEATURE_EXTENSION` (mapped to `MODIFICATION`) if no sub-type keywords are detected.
+
+> **Input Template Alignment:** The `feature-enhancement-input-template.md` uses Enhancement Type values
+> `DEPRECATION | MODIFICATION | CLEANUP | UNIFICATION`. Map sub-types to these values as shown above.
+
+#### 2.2 HYBRID_ANALYSIS Sub-Types
+
+When classified as `HYBRID_ANALYSIS`, identify which primary types are combined:
+
+| Combination | How to Execute |
+|---|---|
+| CODEBASE_AUDIT + NEW_FEATURE_ANALYSIS | Run both full workflows; merge findings and actions |
+| CODEBASE_AUDIT + FEATURE_ENHANCEMENT_ANALYSIS | Run both full workflows; cross-reference findings |
+| Any type + MIGRATION_AUDIT | Run MIGRATION_AUDIT additional steps (Section 7.1) alongside the base workflow |
+
+For HYBRID_ANALYSIS, produce a single merged report using `hybrid-analysis_v{N}.md` naming (see base contract).
+Clearly label each finding with the analysis type that surfaced it.
 
 ### 3. Required Inputs
 
@@ -114,7 +138,12 @@ Use the generic template only when the analysis type is not yet known.
 - NEW_FEATURE_ANALYSIS      -> `.github/templates/new-feature-analysis-input-template.md`
 - FEATURE_ENHANCEMENT_ANALYSIS -> `.github/templates/feature-enhancement-input-template.md`
 - USE_CASE_ALIGNMENT_ANALYSIS  -> `.github/templates/usecase-alignment-input-template.md`
+- HYBRID_ANALYSIS           -> use the generic template + whichever type-specific templates apply
 - Generic / unknown type    -> `.github/templates/research-input-template.md`
+
+> **Enhancement Type alignment:** the `feature-enhancement-input-template.md` lists
+> `DEPRECATION | MODIFICATION | CLEANUP | UNIFICATION` as Enhancement Type values.
+> Map the agent's internal sub-types (Section 2.1) to these values when normalising user input.
 
 ### 6.1 Report Output Template Map
 
@@ -122,6 +151,7 @@ Use the generic template only when the analysis type is not yet known.
 - NEW_FEATURE_ANALYSIS -> `.github/templates/new-feature-analysis-report-template.md`
 - FEATURE_ENHANCEMENT_ANALYSIS -> `.github/templates/feature-enhancement-report-template.md`
 - USE_CASE_ALIGNMENT_ANALYSIS -> `.github/templates/usecase-alignment-report-template.md`
+- HYBRID_ANALYSIS -> use the report template(s) for each type combined; merge into one file
 
 Write selected input/report template paths in report metadata.
 
@@ -285,7 +315,16 @@ See `.github/agents/base.agent.md` — loaded in Section 0.
 ### 9.1 Agent Restrictions (Hard Rules)
 
 - **This agent must not implement any changes to the codebase.** Read, analyze, and report only.
-- **`create_file` is restricted exclusively to generating report files** under `ai-research-report/`. It must never be used to create or overwrite application source files.
+- **`create_file` is restricted exclusively to generating report files** under `ai-research-report/`.
+  It must never be used to create or overwrite application source files. The output path must
+  always begin with `ai-research-report/` — reject any path that does not match this prefix.
+- **`execute_mysql_query` is restricted to `SELECT` statements only.** Never execute
+  `INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, or any DDL/DML statement.
+  Use only when the user explicitly requests database-level diagnostics or schema inspection.
+  Credentials must be resolved from environment variables and never written to any output.
+- **`run_subagent` with `field-filter-api-assistant`** must be used when the user's task
+  involves Filter API suggestion, field visibility diagnosis, or field listing — even within
+  a larger research context. Do not duplicate field-filter-api-assistant workflow steps.
 - Do not modify application source files during research runs.
 - Do not fabricate evidence; every claim must map to inspected artifacts.
 - Do not hide uncertainty; unresolved items must be explicit.

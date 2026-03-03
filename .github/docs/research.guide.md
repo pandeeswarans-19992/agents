@@ -65,6 +65,18 @@ This guide shows how to phrase requests to get the best output from the research
 
 ---
 
+## FEATURE_ENHANCEMENT_ANALYSIS — MIGRATION_AUDIT Sub-Type Example Queries
+
+> "Migrate the custom actions from the legacy `customactions` package to the new generic actions framework. I need a full migration plan with API endpoint mapping, feature parity analysis, and a 6-step phased migration plan."
+
+> "Document what it would take to remove the old `FieldAPI.java` and `FieldAPIImpl.java` implementations in favor of the new `OrgFieldAPI` and `OrgFieldAPIImpl`. Map all callers, identify blockers, and generate a migration plan."
+
+> "Port the legacy synchronous REST endpoints in `com.zoho.support.restapi` to the new internal manager API pattern. What endpoints have no GA equivalent? What's the database schema impact?"
+
+> "Analyze the feature parity between the legacy ticket module and the new activity module framework. What capabilities are missing in the new framework? Generate a migration documentation."
+
+---
+
 ## Tips for Better Queries
 
 - **Name the feature**: include a short kebab-case name so the agent can name the output folder correctly (e.g. `payment-capture-retry`).
@@ -72,6 +84,22 @@ This guide shows how to phrase requests to get the best output from the research
 - **State the change intent**: DEPRECATION, MODIFICATION, CLEANUP, or UNIFICATION helps the agent focus its analysis.
 - **Include constraints**: "no schema breaking change", "must be feature-flagged", "zero downtime" all have direct impact on the recommendations.
 - **Specify the output you need**: risk matrix, phased plan, rollback strategy, alignment score — tell the agent what you want.
+- **For MIGRATION_AUDIT**: provide both the legacy package/path (FROM) and the new package/path (TO) to get the most accurate endpoint mapping and feature parity analysis.
+
+---
+
+## Agent Delegation
+
+The research agent will automatically delegate to the **Field Filter API Assistant** when your
+request involves Filter API suggestion or field visibility diagnosis. You do not need to switch
+agents manually. Example triggers:
+
+> "While analyzing the doctor module, why isn't the `specialist` field showing in the Filter API?"
+
+> "As part of this enhancement analysis, suggest which Filter API to use for the new search screen."
+
+For dedicated Filter API tasks without a research context, use the Field Filter API Assistant directly.
+See `.github/docs/field-filter-api-assistant.guide.md` for usage examples.
 
 ---
 
@@ -85,4 +113,5 @@ Examples:
 
 - `ai-research-report/payment-capture-retry/feature-enhancement-analysis_v1.md`
 - `ai-research-report/password-reset/usecase-alignment-analysis_v2.md`
+- `ai-research-report/custom-actions-migration/migration-documentation-v1.md`
 

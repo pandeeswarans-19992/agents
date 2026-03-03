@@ -59,7 +59,35 @@ Agents must walk through all conditions before concluding a root cause.
 | 2 | `ZD_Modules.PRESENCE = 0` | `SELECT PRESENCE FROM ZD_Modules WHERE SYSTEMNAME = ?` | Module is globally disabled |
 | 3 | `CrmField.IS_INTERNAL_STATE = 1` | `SELECT IS_INTERNAL_STATE FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Internal state field; excluded from Filter API by design |
 | 4 | `CrmField.IS_COMPUTED = 1` | `SELECT IS_COMPUTED FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Computed field; cannot be used in filter predicates |
-| 5 | Operator not supported for TYPE | Check `CrmField.TYPE` vs operator used in predicate | Use a supported operator from the table above |
+| 5 | Operator not supported for TYPE | Check `CrmField.TYPE` vs operator used in predicate | Use a supported operator from the Supported Predicate Operators table below |
+| 6 | `CrmField.ACCESSPERMISSION` bitmask denies read | Use Q-06 to check bitmask value | Field requires a specific profile permission; verify caller's profile has read access |
+
+---
+
+## Supported Predicate Operators by Field Type
+
+Agents must validate that the operator in a predicate is supported for the field's `TYPE`.
+Use this table when diagnosing field visibility issues (Condition 5 in the checklist above).
+
+| Field Type | DB Column Type | Supported Operators |
+|------------|----------------|---------------------|
+| `long` / FK | BIGINT | `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `in`, `not_in` |
+| `number` (INT) | INT | `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `in`, `not_in` |
+| `boolean` | TINYINT(1) | `eq`, `ne` |
+| `singleline` | VARCHAR(255) | `eq`, `ne`, `contains`, `starts_with`, `ends_with`, `in`, `not_in` |
+| `textarea` | TEXT | `contains` _(high scan cost — use with caution)_ |
+| `picklist` | VARCHAR(100) | `eq`, `ne`, `in`, `not_in` |
+| `date` | DATE | `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `between` |
+| `datetime` | DATETIME | `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `between` |
+| `email` | VARCHAR(255) | `eq`, `ne`, `contains`, `starts_with`, `ends_with` |
+| `phone` | VARCHAR(100) | `eq`, `ne`, `contains`, `starts_with` |
+| `url` | VARCHAR(255) | `eq`, `ne`, `contains`, `starts_with` |
+| `decimal` / `currency` | DECIMAL | `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `between` |
+| `percent` | DECIMAL | `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `between` |
+| `lookup` / `multi_lookup` | BIGINT | `eq`, `ne`, `in`, `not_in` |
+
+> **Note:** Operators not in this table are unsupported for the given field type and will result
+> in the field being excluded from the Filter API response or causing a predicate evaluation error.
 
 ---
 

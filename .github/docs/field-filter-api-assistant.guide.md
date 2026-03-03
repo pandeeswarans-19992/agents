@@ -134,13 +134,22 @@ MCP_CHAT_ID=<fields-team-support-chat-id>
 ## Understanding Field Visibility Diagnostics
 
 When a field is missing from the Filter API, the agent checks these conditions
-(using the MySQL query templates Q-01 through Q-05 in `filter-knowledge.md`):
+(using the MySQL query templates Q-01 through Q-06 in `field-context.md`):
 
 1. Is the **module** active? (`ZD_Modules.PRESENCE = 1`)
 2. Is the field present in the Filter API response? (`CrmField.ISPRESENCE = 1`)
 3. Is the field an internal state field? (`CrmField.IS_INTERNAL_STATE = 0` required)
 4. Is the field a computed field? (`CrmField.IS_COMPUTED = 0` required)
-5. Is the **operator** in the supported set for the field's `TYPE`?
+5. Is the **operator** in the supported set for the field's `TYPE`? (see Supported Predicates Quick Reference below)
+6. Does the `CrmField.ACCESSPERMISSION` bitmask allow the caller's profile to read this field? (use Q-06 to check)
+
+---
+
+## HYBRID — Example Query
+
+> "For the `doctor` module: suggest which Filter API to use for the list view AND tell me why the `specialist` field isn't showing up for the predicate `specialist+eq+Cardiology`."
+
+**Agent output:** A merged response with a labeled Filter Suggestion section and a Field Visibility Debug section.
 
 ---
 

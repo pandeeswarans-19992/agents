@@ -147,3 +147,46 @@ Validation checklist:
 - Report not generated:
   - Confirm write permissions in project root.
   - Check whether `ai-research-report/` is ignored or blocked by tooling.
+- MySQL credential errors (field-filter-api-assistant):
+  - Ensure `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` are set as environment variables.
+  - Use a **read-only** service account — the agent only executes `SELECT` queries.
+  - Never paste the password into the agent chat; supply it only through the environment or a secrets manager.
+  - If the connection fails, the agent will stop the diagnostic and offer to escalate via MCP.
+- MCP escalation not working:
+  - Ensure `MCP_SERVER_URL`, `MCP_OAUTH_TOKEN`, and `MCP_CHAT_ID` are set as environment variables.
+  - The agent uses OAuth Bearer authentication; verify the token is valid and not expired.
+  - If any MCP variable is missing, the agent informs the user and skips the escalation step.
+- Agent delegates unexpectedly:
+  - The research agent automatically delegates Filter API tasks to field-filter-api-assistant.
+  - If you want to handle everything in one agent session, rephrase the request to avoid Filter API triggers
+    or use the field-filter-api-assistant directly for pure Filter API queries.
+
+## Runtime Modes (Research Agent)
+
+The research agent supports forced classification modes. Use these when automatic classification
+picks the wrong type:
+
+| Mode | Usage |
+|---|---|
+| `AUTO` (default) | Agent classifies based on request keywords and context |
+| `FORCE_AUDIT` | Forces CODEBASE_AUDIT regardless of request content |
+| `FORCE_NEW_FEATURE` | Forces NEW_FEATURE_ANALYSIS |
+| `FORCE_ENHANCEMENT` | Forces FEATURE_ENHANCEMENT_ANALYSIS |
+| `FORCE_ALIGNMENT` | Forces USE_CASE_ALIGNMENT_ANALYSIS |
+| `FORCE_HYBRID` | Forces HYBRID_ANALYSIS |
+| `FORCE_MIGRATION_AUDIT` | Forces FEATURE_ENHANCEMENT_ANALYSIS with MIGRATION_AUDIT sub-type |
+
+To activate, prefix your request with the mode name:
+> `FORCE_MIGRATION_AUDIT: Analyze the custom actions migration from legacy to generic framework.`
+
+## Agent Delegation
+
+The agents support automatic delegation:
+
+| From | To | Trigger |
+|---|---|---|
+| `research` | `field-filter-api-assistant` | Request includes Filter API suggestion or field visibility diagnosis |
+| Any agent | `research` | Request requires deep call-hierarchy analysis or migration planning |
+
+The delegating agent passes full context to the specialist and incorporates the result.
+No manual agent switching is needed in most cases.

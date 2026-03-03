@@ -201,6 +201,9 @@ _(Delete rows for domains that have no suggestions. Do not include empty placeho
 - **Confidence Score:**
 - **Feasibility Assessment:**
 - **Recommended Immediate Next Step:**
+- **Open Unknowns:**- **Confidence Score:**
+- **Feasibility Assessment:**
+- **Recommended Immediate Next Step:**
 - **Open Unknowns:**
 
 ---

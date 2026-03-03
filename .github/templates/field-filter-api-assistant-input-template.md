@@ -12,6 +12,7 @@ Select one:
 - [ ] FILTER_SUGGESTION — I have a use case and want the agent to recommend the right Filter API.
 - [ ] FIELD_VISIBILITY_DEBUG — I want to know why a specific field appears or does not appear in the Filter API.
 - [ ] FILTER_FIELD_LISTING — I want to query filterable fields for a module.
+- [ ] HYBRID — My request clearly combines more than one of the above types (describe both needs in the relevant sections below).
 
 ---
 

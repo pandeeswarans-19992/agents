@@ -436,3 +436,22 @@ WHERE m.SYSTEMNAME = ?
   AND (f.IS_INTERNAL_STATE = 1 OR f.IS_COMPUTED = 1)
 ORDER BY f.APINAME;
 ```
+
+### Q-06 — Check ACCESSPERMISSION bitmask for a specific field
+
+```sql
+SELECT f.FIELDID, f.APINAME, f.TYPE,
+       f.ACCESSPERMISSION, f.ISPRESENCE,
+       f.IS_INTERNAL_STATE, f.IS_COMPUTED
+FROM CrmField f
+INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
+WHERE m.SYSTEMNAME = ?
+  AND f.APINAME = ?;
+```
+
+> **ACCESSPERMISSION bitmask guidance:**
+> - `0` = no access restriction (field is visible to all profiles)
+> - Non-zero value = access is restricted by profile bitmask; verify the caller's profile ID
+>   has the corresponding bit set before concluding that the field is available via the Filter API.
+> - Use in conjunction with `FieldPermissionAPI` to check profile-level visibility.
+
