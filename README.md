@@ -45,7 +45,7 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
     - `new-feature-analysis-report-template.md`
     - `feature-enhancement-report-template.md`
     - `usecase-alignment-report-template.md`
-- `tools/`
+- `.github/tools/`
   - custom MCP tool servers – one subdirectory per server:
     - `mcp-mysql-server/` – MCP server exposing `execute_mysql_query` (read-only MySQL SELECT)
 
@@ -67,11 +67,11 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 
 ## Add a New Tool Server
 
-Each custom tool lives under `tools/<server-name>/` and follows the structure of
-`tools/mcp-mysql-server/` as the reference implementation.
+Each custom tool lives under `.github/tools/<server-name>/` and follows the structure of
+`.github/tools/mcp-mysql-server/` as the reference implementation.
 
 1. Create the server directory:
-	- `tools/<server-name>/`
+	- `.github/tools/<server-name>/`
 2. Add the required files:
 	- `server.py` – MCP server entry point; expose tools using `FastMCP`.
 	- `query_validator.py` (or equivalent) – input validation before execution.

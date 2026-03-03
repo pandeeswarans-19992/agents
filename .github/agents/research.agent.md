@@ -31,12 +31,12 @@ When `execute_mysql_query` is unavailable:
 
 1. Run in terminal:
    ```
-   pip install -r tools/mcp-mysql-server/requirements.txt
+   pip install -r .github/tools/mcp-mysql-server/requirements.txt
    ```
 2. Confirm success via `get_terminal_output`.
 3. Start the server in the background:
    ```
-   python tools/mcp-mysql-server/server.py &
+   python .github/tools/mcp-mysql-server/server.py &
    ```
 4. Verify required credentials are present in the environment; prompt the user
    for any missing variable before retrying the query.
