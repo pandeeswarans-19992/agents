@@ -1,8 +1,8 @@
-## FILTER API AGENT — Request Input Template
+## FIELD FILTER API ASSISTANT — Request Input Template
 
-Purpose: Standard input format for submitting any request to the Filter API agent.
+Purpose: Standard input format for submitting any request to the Field Filter API Assistant.
 Complete the section that matches your request type. Leave irrelevant sections blank.
-Reference: `.github/agents/filter-api.agent.md`
+Reference: `.github/agents/field-filter-api-assistant.agent.md`
 
 ---
 

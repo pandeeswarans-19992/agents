@@ -1,7 +1,7 @@
-# Filter API Agent Guide
+# Field Filter API Assistant Guide
 
-Example queries and configuration instructions for `.github/agents/filter-api.agent.md`.
-This guide shows how to phrase requests to get the best output from the Filter API agent.
+Example queries and configuration instructions for `.github/agents/field-filter-api-assistant.agent.md`.
+This guide shows how to phrase requests to get the best output from the Field Filter API Assistant.
 
 ---
 
@@ -72,7 +72,7 @@ Reason:
 
 ## Providing Inputs
 
-Use the input template at `.github/templates/filter-api-input-template.md` for structured requests.
+Use the input template at `.github/templates/field-filter-api-assistant-input-template.md` for structured requests.
 
 Minimum required inputs per request type:
 
@@ -137,12 +137,10 @@ When a field is missing from the Filter API, the agent checks these conditions
 (using the MySQL query templates Q-01 through Q-05 in `filter-knowledge.md`):
 
 1. Is the **module** active? (`ZD_Modules.PRESENCE = 1`)
-2. Is the **field** active? (`CrmField.PRESENCE = 1`)
-3. Is the field present in the Filter API response? (`CrmField.ISPRESENCE = 1`)
-4. Does the field's `SHOWTYPE` bitmask include the filter-visibility bit?
-5. Is the field an internal state field? (`CrmField.IS_INTERNAL_STATE = 0` required)
-6. Is the field a computed field? (`CrmField.IS_COMPUTED = 0` required)
-7. Is the **operator** in the supported set for the field's `UITYPE`?
+2. Is the field present in the Filter API response? (`CrmField.ISPRESENCE = 1`)
+3. Is the field an internal state field? (`CrmField.IS_INTERNAL_STATE = 0` required)
+4. Is the field a computed field? (`CrmField.IS_COMPUTED = 0` required)
+5. Is the **operator** in the supported set for the field's `TYPE`?
 
 ---
 

@@ -18,6 +18,8 @@ These files are the single source of truth for shared context.
   `.github/knowledge/module-knowledge.md`
 - Field knowledge (domain glossary, business rules, data field definitions, state machines):
   `.github/knowledge/field-knowledge.md`
+- Field context (CrmField MySQL schema, Java field API inventory, architecture files, Field Filter API guide):
+  `.github/knowledge/field-context.md`
 
 For every report, include evidence from:
 

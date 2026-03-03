@@ -1,10 +1,12 @@
 # Filter Knowledge
 
 Purpose: Define what the Filter API is, how fields become filterable, the predicate
-model, the MySQL schema that controls field filter visibility, and the rules agents
-must apply when diagnosing filter API behaviour or suggesting filtering strategies.
-Agents must load this file alongside `field-knowledge.md` and `module-knowledge.md`
-whenever a task involves the Filter API.
+model, the filtering strategies, and the rules agents must apply when diagnosing
+filter API behaviour or suggesting filtering strategies.
+Agents must load this file alongside `field-context.md`, `field-knowledge.md`, and
+`module-knowledge.md` whenever a task involves the Filter API.
+For CrmField MySQL schema (column definitions, deprecated columns) and Java field API
+context, refer to `.github/knowledge/field-context.md`.
 
 ---
 
@@ -61,39 +63,6 @@ Operators not in the list above are rejected with a `400 Bad Request`.
 
 ---
 
-## Field Filter Properties (MySQL)
-
-### Table: `CrmField`
-
-Each row in the `CrmField` table represents one field belonging to a module.
-The columns relevant to Filter API behaviour are:
-
-| Column              | Type            | Description |
-|---------------------|-----------------|-------------|
-| `FIELDID`           | BIGINT(19) PK   | Surrogate key |
-| `MODULEID`          | BIGINT(19) FK   | References `ZD_Modules.MODULEID` |
-| `APINAME`           | VARCHAR(255)    | API-level name used in predicates |
-| `UITYPE`            | INT(10)         | Numeric UI type that determines valid filter operators |
-| `PRESENCE`          | BIGINT(19)      | `1` = field is active/present; `0` = field is inactive (excluded from Filter API) |
-| `ISPRESENCE`        | TINYINT(1)      | `1` = field is present in the Filter API response; `0` = field is hidden from the filter listing |
-| `SHOWTYPE`          | INT(10)         | Bitmask controlling where the field is shown (default `7` = all contexts); filter visibility requires the filter bit to be set |
-| `IS_INTERNAL_STATE` | TINYINT(1)      | `1` = internal state field; excluded from Filter API by default |
-| `IS_COMPUTED`       | TINYINT(1)      | `1` = computed field; cannot be used in filter predicates |
-| `IS_BASIC`          | TINYINT(1)      | `1` = basic/system field |
-| `ISMANDATORY`       | TINYINT(1)      | `1` = required on record creation; does not affect filter visibility |
-
-### Table: `ZD_Modules`
-
-| Column       | Type           | Description |
-|--------------|----------------|-------------|
-| `MODULEID`   | BIGINT(19) PK  | Surrogate key |
-| `NAME`       | VARCHAR(255)   | Module display name |
-| `SYSTEMNAME` | VARCHAR(255)   | System/API name used in Filter API URLs |
-| `PRESENCE`   | TINYINT(4)     | `1` = module is active; `0` = module is disabled globally |
-| `SHOWTYPE`   | TINYINT(4)     | Bitmask controlling module visibility |
-
----
-
 ## Why a Field May Not Appear in the Filter API
 
 Use this checklist when diagnosing field visibility issues.
@@ -101,13 +70,11 @@ Agents must walk through all conditions before concluding a root cause.
 
 | # | Condition | Diagnostic Query | Resolution |
 |---|-----------|-----------------|------------|
-| 1 | `CrmField.PRESENCE = 0` | `SELECT PRESENCE FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Field is inactive; re-activate or use a replacement field |
-| 2 | `CrmField.ISPRESENCE = 0` | `SELECT ISPRESENCE FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Field is not present in Filter API; enable ISPRESENCE after platform review |
-| 3 | `CrmField.SHOWTYPE` filter bit not set | `SELECT SHOWTYPE FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | SHOWTYPE bitmask does not include filter visibility; update after platform review |
-| 4 | `ZD_Modules.PRESENCE = 0` | `SELECT PRESENCE FROM ZD_Modules WHERE SYSTEMNAME = ?` | Module is globally disabled |
-| 5 | `CrmField.IS_INTERNAL_STATE = 1` | `SELECT IS_INTERNAL_STATE FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Internal state field; excluded from Filter API by design |
-| 6 | `CrmField.IS_COMPUTED = 1` | `SELECT IS_COMPUTED FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Computed field; cannot be used in filter predicates |
-| 7 | Operator not supported for UITYPE | Check `CrmField.UITYPE` vs operator used in predicate | Use a supported operator from the table above |
+| 1 | `CrmField.ISPRESENCE = 0` | `SELECT ISPRESENCE FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Field is not present in Filter API; enable ISPRESENCE after platform review |
+| 2 | `ZD_Modules.PRESENCE = 0` | `SELECT PRESENCE FROM ZD_Modules WHERE SYSTEMNAME = ?` | Module is globally disabled |
+| 3 | `CrmField.IS_INTERNAL_STATE = 1` | `SELECT IS_INTERNAL_STATE FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Internal state field; excluded from Filter API by design |
+| 4 | `CrmField.IS_COMPUTED = 1` | `SELECT IS_COMPUTED FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Computed field; cannot be used in filter predicates |
+| 5 | Operator not supported for TYPE | Check `CrmField.TYPE` vs operator used in predicate | Use a supported operator from the table above |
 
 ---
 
@@ -190,8 +157,8 @@ WHERE SYSTEMNAME = ?;
 ### Q-02 — Check all filter properties for a specific field
 
 ```sql
-SELECT f.FIELDID, f.APINAME, f.UITYPE,
-       f.PRESENCE, f.ISPRESENCE, f.SHOWTYPE,
+SELECT f.FIELDID, f.APINAME, f.TYPE,
+       f.ISPRESENCE,
        f.IS_INTERNAL_STATE, f.IS_COMPUTED
 FROM CrmField f
 INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
@@ -202,34 +169,33 @@ WHERE m.SYSTEMNAME = ?
 ### Q-03 — List all present/active fields for a module
 
 ```sql
-SELECT f.APINAME, f.UITYPE,
-       f.PRESENCE, f.ISPRESENCE, f.SHOWTYPE,
+SELECT f.APINAME, f.TYPE,
+       f.ISPRESENCE,
        f.IS_INTERNAL_STATE, f.IS_COMPUTED
 FROM CrmField f
 INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
 WHERE m.SYSTEMNAME = ?
-  AND f.PRESENCE = 1
   AND f.ISPRESENCE = 1
 ORDER BY f.APINAME;
 ```
 
-### Q-04 — List inactive/hidden fields for a module
+### Q-04 — List hidden fields for a module
 
 ```sql
-SELECT f.APINAME, f.UITYPE,
-       f.PRESENCE, f.ISPRESENCE, f.SHOWTYPE
+SELECT f.APINAME, f.TYPE,
+       f.ISPRESENCE
 FROM CrmField f
 INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
 WHERE m.SYSTEMNAME = ?
-  AND (f.PRESENCE = 0 OR f.ISPRESENCE = 0)
+  AND f.ISPRESENCE = 0
 ORDER BY f.APINAME;
 ```
 
 ### Q-05 — List internal state and computed fields for a module
 
 ```sql
-SELECT f.APINAME, f.UITYPE,
-       f.IS_INTERNAL_STATE, f.IS_COMPUTED, f.PRESENCE
+SELECT f.APINAME, f.TYPE,
+       f.IS_INTERNAL_STATE, f.IS_COMPUTED, f.ISPRESENCE
 FROM CrmField f
 INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
 WHERE m.SYSTEMNAME = ?
