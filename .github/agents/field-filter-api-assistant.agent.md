@@ -33,8 +33,8 @@ access" path defined in the base contract:
 1. Inform the user that the MCP MySQL server must be started manually.
 2. Provide the exact commands:
    ```
-   pip install -r tools/mcp-mysql-server/requirements.txt
-   python tools/mcp-mysql-server/server.py
+   pip install -r .github/tools/mcp-mysql-server/requirements.txt
+   python .github/tools/mcp-mysql-server/server.py
    ```
 3. Ask the user to restart the agent session once the server is running.
 

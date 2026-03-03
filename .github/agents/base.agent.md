@@ -77,14 +77,14 @@ Version number must increment when the same feature + report type already exists
 
 ### Tool Availability and Auto-Install Protocol (All Agents)
 
-Custom tools are provided by MCP servers located under the `tools/` directory.
+Custom tools are provided by MCP servers located under the `.github/tools/` directory.
 Each subdirectory is one MCP server:
 
-| Server directory              | Tool exposed            | Purpose |
-|-------------------------------|-------------------------|---------|
-| `tools/mcp-mysql-server/`     | `execute_mysql_query`   | Read-only MySQL SELECT execution |
+| Server directory                      | Tool exposed            | Purpose |
+|---------------------------------------|-------------------------|---------|
+| `.github/tools/mcp-mysql-server/`     | `execute_mysql_query`   | Read-only MySQL SELECT execution |
 
-**Before using any tool from the `tools/` directory, verify it is available.**
+**Before using any tool from the `.github/tools/` directory, verify it is available.**
 
 #### Detection
 
@@ -97,7 +97,7 @@ A tool is considered unavailable when any of the following occurs:
 
 When a tool is unavailable, execute the following steps **before retrying the
 original task** (replace `<server-directory>` with the actual path from the table
-above, e.g. `tools/mcp-mysql-server`):
+above, e.g. `.github/tools/mcp-mysql-server`):
 
 1. Navigate to the server directory.
 2. Install Python dependencies:
@@ -121,9 +121,9 @@ When a required tool is unavailable and the agent does not have access to a
 terminal tool (`run_in_terminal`):
 1. Inform the user that the MCP server must be started manually.
 2. Provide the exact install and start commands from the server's `README.md`
-   (e.g. for `tools/mcp-mysql-server/`):
+   (e.g. for `.github/tools/mcp-mysql-server/`):
    ```
-   pip install -r tools/mcp-mysql-server/requirements.txt
-   python tools/mcp-mysql-server/server.py
+   pip install -r .github/tools/mcp-mysql-server/requirements.txt
+   python .github/tools/mcp-mysql-server/server.py
    ```
 3. Ask the user to restart the agent session after the server is running.

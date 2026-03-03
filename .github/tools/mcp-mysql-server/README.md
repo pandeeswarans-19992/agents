@@ -18,7 +18,7 @@ that exposes a single, read-only MySQL query tool to GitHub Copilot agents.
 ### 1. Install Python dependencies
 
 ```bash
-cd tools/mcp-mysql-server
+cd .github/tools/mcp-mysql-server
 pip install -r requirements.txt
 ```
 
@@ -74,7 +74,7 @@ IDE's MCP configuration (see below).
   "servers": {
     "mcp-mysql-server": {
       "command": "python",
-      "args": ["tools/mcp-mysql-server/server.py"],
+      "args": [".github/tools/mcp-mysql-server/server.py"],
       "env": {
         "DB_HOST": "${env:DB_HOST}",
         "DB_PORT": "${env:DB_PORT}",
@@ -92,7 +92,7 @@ IDE's MCP configuration (see below).
 ## File Structure
 
 ```
-tools/mcp-mysql-server/
+.github/tools/mcp-mysql-server/
 ├── server.py            # MCP server entry point; exposes execute_mysql_query
 ├── query_validator.py   # Validates queries are SELECT-only before execution
 ├── requirements.txt     # Python dependencies
