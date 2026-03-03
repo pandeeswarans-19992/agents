@@ -63,42 +63,34 @@ Operators not in the list above are rejected with a `400 Bad Request`.
 
 ## Field Filter Properties (MySQL)
 
-### Table: `field`
+### Table: `CrmField`
 
-Each row in the `field` table represents one field belonging to a module.
+Each row in the `CrmField` table represents one field belonging to a module.
 The columns relevant to Filter API behaviour are:
 
-| Column              | Type           | Description |
-|---------------------|----------------|-------------|
-| `id`                | BIGINT PK      | Surrogate key |
-| `module_id`         | BIGINT FK      | References `module.id` |
-| `field_name`        | VARCHAR(100)   | API-level name used in predicates |
-| `field_type`        | VARCHAR(50)    | One of: `long`, `number`, `boolean`, `singleline`, `textarea`, `picklist` |
-| `is_filterable`     | TINYINT(1)     | `1` = field is available in Filter API; `0` = excluded |
-| `filter_visible`    | TINYINT(1)     | `1` = field appears in the Filter API field-list response; `0` = hidden from listing (but may still be predicate-usable if `is_filterable = 1`) |
-| `supported_operators` | VARCHAR(500) | Comma-separated operator list; overrides the default for the field type when non-null |
-| `is_active`         | TINYINT(1)     | `0` = field is soft-deleted; excluded from Filter API regardless of `is_filterable` |
-| `is_mandatory`      | TINYINT(1)     | `1` = required on record creation; does not affect filter visibility |
+| Column              | Type            | Description |
+|---------------------|-----------------|-------------|
+| `FIELDID`           | BIGINT(19) PK   | Surrogate key |
+| `MODULEID`          | BIGINT(19) FK   | References `ZD_Modules.MODULEID` |
+| `APINAME`           | VARCHAR(255)    | API-level name used in predicates |
+| `UITYPE`            | INT(10)         | Numeric UI type that determines valid filter operators |
+| `PRESENCE`          | BIGINT(19)      | `1` = field is active/present; `0` = field is inactive (excluded from Filter API) |
+| `ISPRESENCE`        | TINYINT(1)      | `1` = field is present in the Filter API response; `0` = field is hidden from the filter listing |
+| `SHOWTYPE`          | INT(10)         | Bitmask controlling where the field is shown (default `7` = all contexts); filter visibility requires the filter bit to be set |
+| `IS_INTERNAL_STATE` | TINYINT(1)      | `1` = internal state field; excluded from Filter API by default |
+| `IS_COMPUTED`       | TINYINT(1)      | `1` = computed field; cannot be used in filter predicates |
+| `IS_BASIC`          | TINYINT(1)      | `1` = basic/system field |
+| `ISMANDATORY`       | TINYINT(1)      | `1` = required on record creation; does not affect filter visibility |
 
-### Table: `module`
+### Table: `ZD_Modules`
 
-| Column           | Type           | Description |
-|------------------|----------------|-------------|
-| `id`             | BIGINT PK      | Surrogate key |
-| `module_name`    | VARCHAR(100)   | Internal module name |
-| `api_name`       | VARCHAR(100)   | Module name used in Filter API URLs |
-| `is_filter_enabled` | TINYINT(1)  | `1` = Filter API is enabled for the entire module; `0` = no filter endpoint exposed |
-| `is_active`      | TINYINT(1)     | `0` = module is disabled globally |
-
-### Table: `picklist_value`
-
-| Column        | Type          | Description |
-|---------------|---------------|-------------|
-| `id`          | BIGINT PK     | Surrogate key |
-| `field_id`    | BIGINT FK     | References `field.id` |
-| `value_key`   | VARCHAR(100)  | The stored key value used in predicates |
-| `label`       | VARCHAR(255)  | Human-readable display label |
-| `is_active`   | TINYINT(1)    | `0` = value is retired; rejected by Filter API even if key exists in a record |
+| Column       | Type           | Description |
+|--------------|----------------|-------------|
+| `MODULEID`   | BIGINT(19) PK  | Surrogate key |
+| `NAME`       | VARCHAR(255)   | Module display name |
+| `SYSTEMNAME` | VARCHAR(255)   | System/API name used in Filter API URLs |
+| `PRESENCE`   | TINYINT(4)     | `1` = module is active; `0` = module is disabled globally |
+| `SHOWTYPE`   | TINYINT(4)     | Bitmask controlling module visibility |
 
 ---
 
@@ -109,13 +101,13 @@ Agents must walk through all conditions before concluding a root cause.
 
 | # | Condition | Diagnostic Query | Resolution |
 |---|-----------|-----------------|------------|
-| 1 | `field.is_active = 0` | `SELECT is_active FROM field WHERE module_id = ? AND field_name = ?` | Re-activate field or use replacement field |
-| 2 | `field.is_filterable = 0` | `SELECT is_filterable FROM field WHERE module_id = ? AND field_name = ?` | Set `is_filterable = 1` after platform review |
-| 3 | `field.filter_visible = 0` | `SELECT filter_visible FROM field WHERE module_id = ? AND field_name = ?` | Set `filter_visible = 1` to expose in listing |
-| 4 | `module.is_filter_enabled = 0` | `SELECT is_filter_enabled FROM module WHERE api_name = ?` | Enable Filter API for the module |
-| 5 | `module.is_active = 0` | `SELECT is_active FROM module WHERE api_name = ?` | Module is globally disabled |
-| 6 | Picklist value key is inactive | `SELECT is_active FROM picklist_value WHERE field_id = ? AND value_key = ?` | Retire old key properly or use active key |
-| 7 | Operator not supported for field type | Check `field.supported_operators` vs operator used in predicate | Use a supported operator from the table above |
+| 1 | `CrmField.PRESENCE = 0` | `SELECT PRESENCE FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Field is inactive; re-activate or use a replacement field |
+| 2 | `CrmField.ISPRESENCE = 0` | `SELECT ISPRESENCE FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Field is not present in Filter API; enable ISPRESENCE after platform review |
+| 3 | `CrmField.SHOWTYPE` filter bit not set | `SELECT SHOWTYPE FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | SHOWTYPE bitmask does not include filter visibility; update after platform review |
+| 4 | `ZD_Modules.PRESENCE = 0` | `SELECT PRESENCE FROM ZD_Modules WHERE SYSTEMNAME = ?` | Module is globally disabled |
+| 5 | `CrmField.IS_INTERNAL_STATE = 1` | `SELECT IS_INTERNAL_STATE FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Internal state field; excluded from Filter API by design |
+| 6 | `CrmField.IS_COMPUTED = 1` | `SELECT IS_COMPUTED FROM CrmField WHERE MODULEID = ? AND APINAME = ?` | Computed field; cannot be used in filter predicates |
+| 7 | Operator not supported for UITYPE | Check `CrmField.UITYPE` vs operator used in predicate | Use a supported operator from the table above |
 
 ---
 
@@ -187,63 +179,62 @@ Agents must use these parameterised templates when executing diagnostic queries.
 Always replace `?` with the actual module API name or field name from the user request.
 Never expose credentials in reports; reference them from the environment config only.
 
-### Q-01 — Resolve module_id from api_name
+### Q-01 — Resolve MODULEID from SYSTEMNAME
 
 ```sql
-SELECT id, module_name, api_name, is_filter_enabled, is_active
-FROM module
-WHERE api_name = ?;
+SELECT MODULEID, NAME, SYSTEMNAME, PRESENCE
+FROM ZD_Modules
+WHERE SYSTEMNAME = ?;
 ```
 
 ### Q-02 — Check all filter properties for a specific field
 
 ```sql
-SELECT f.id, f.field_name, f.field_type,
-       f.is_filterable, f.filter_visible,
-       f.supported_operators, f.is_active, f.is_mandatory
-FROM field f
-INNER JOIN module m ON f.module_id = m.id
-WHERE m.api_name = ?
-  AND f.field_name = ?;
+SELECT f.FIELDID, f.APINAME, f.UITYPE,
+       f.PRESENCE, f.ISPRESENCE, f.SHOWTYPE,
+       f.IS_INTERNAL_STATE, f.IS_COMPUTED
+FROM CrmField f
+INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
+WHERE m.SYSTEMNAME = ?
+  AND f.APINAME = ?;
 ```
 
-### Q-03 — List all filterable fields for a module
+### Q-03 — List all present/active fields for a module
 
 ```sql
-SELECT f.field_name, f.field_type,
-       f.is_filterable, f.filter_visible,
-       f.supported_operators, f.is_active
-FROM field f
-INNER JOIN module m ON f.module_id = m.id
-WHERE m.api_name = ?
-  AND f.is_filterable = 1
-  AND f.is_active = 1
-ORDER BY f.field_name;
+SELECT f.APINAME, f.UITYPE,
+       f.PRESENCE, f.ISPRESENCE, f.SHOWTYPE,
+       f.IS_INTERNAL_STATE, f.IS_COMPUTED
+FROM CrmField f
+INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
+WHERE m.SYSTEMNAME = ?
+  AND f.PRESENCE = 1
+  AND f.ISPRESENCE = 1
+ORDER BY f.APINAME;
 ```
 
-### Q-04 — List non-filterable active fields for a module
+### Q-04 — List inactive/hidden fields for a module
 
 ```sql
-SELECT f.field_name, f.field_type,
-       f.is_filterable, f.filter_visible, f.is_active
-FROM field f
-INNER JOIN module m ON f.module_id = m.id
-WHERE m.api_name = ?
-  AND f.is_filterable = 0
-  AND f.is_active = 1
-ORDER BY f.field_name;
+SELECT f.APINAME, f.UITYPE,
+       f.PRESENCE, f.ISPRESENCE, f.SHOWTYPE
+FROM CrmField f
+INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
+WHERE m.SYSTEMNAME = ?
+  AND (f.PRESENCE = 0 OR f.ISPRESENCE = 0)
+ORDER BY f.APINAME;
 ```
 
-### Q-05 — Check picklist values for a field
+### Q-05 — List internal state and computed fields for a module
 
 ```sql
-SELECT pv.value_key, pv.label, pv.is_active
-FROM picklist_value pv
-INNER JOIN field f ON pv.field_id = f.id
-INNER JOIN module m ON f.module_id = m.id
-WHERE m.api_name = ?
-  AND f.field_name = ?
-ORDER BY pv.is_active DESC, pv.value_key;
+SELECT f.APINAME, f.UITYPE,
+       f.IS_INTERNAL_STATE, f.IS_COMPUTED, f.PRESENCE
+FROM CrmField f
+INNER JOIN ZD_Modules m ON f.MODULEID = m.MODULEID
+WHERE m.SYSTEMNAME = ?
+  AND (f.IS_INTERNAL_STATE = 1 OR f.IS_COMPUTED = 1)
+ORDER BY f.APINAME;
 ```
 
 ---

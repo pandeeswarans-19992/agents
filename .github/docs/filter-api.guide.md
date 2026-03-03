@@ -60,11 +60,11 @@ Reason:
 
 ## FILTER_FIELD_LISTING — Example Queries
 
-> "Show me all fields for the `doctor` module where `is_filterable = 1`."
+> "Show me all fields for the `doctor` module where `ISPRESENCE = 1`."
 
-> "I want to apply the predicate `is_active+eq+1` on the `patient` module — show me the results."
+> "I want to apply the predicate `PRESENCE+eq+1` on the `patient` module — show me the results."
 
-> "Run this MySQL query for me: SELECT * FROM field WHERE module_id = 5 AND is_filterable = 1"
+> "Run this MySQL query for me: SELECT FIELDID, APINAME, PRESENCE, ISPRESENCE FROM CrmField WHERE MODULEID = 5 AND ISPRESENCE = 1"
 
 **Agent output:** Results are printed as a markdown table in the chat window.
 
@@ -136,12 +136,13 @@ MCP_CHAT_ID=<fields-team-support-chat-id>
 When a field is missing from the Filter API, the agent checks these conditions
 (using the MySQL query templates Q-01 through Q-05 in `filter-knowledge.md`):
 
-1. Is the **module** active and filter-enabled?
-2. Is the **field** active (`is_active = 1`)?
-3. Is the field marked filterable (`is_filterable = 1`)?
-4. Is the field visible in the listing (`filter_visible = 1`)?
-5. Is the **operator** in the supported set for the field type?
-6. For `picklist` fields: is the predicate **value key** an active picklist value?
+1. Is the **module** active? (`ZD_Modules.PRESENCE = 1`)
+2. Is the **field** active? (`CrmField.PRESENCE = 1`)
+3. Is the field present in the Filter API response? (`CrmField.ISPRESENCE = 1`)
+4. Does the field's `SHOWTYPE` bitmask include the filter-visibility bit?
+5. Is the field an internal state field? (`CrmField.IS_INTERNAL_STATE = 0` required)
+6. Is the field a computed field? (`CrmField.IS_COMPUTED = 0` required)
+7. Is the **operator** in the supported set for the field's `UITYPE`?
 
 ---
 
