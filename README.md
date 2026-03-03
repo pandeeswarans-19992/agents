@@ -17,19 +17,35 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 
 - `.github/agents/`
   - `base.agent.md` – shared base contract (knowledge lens, governance, escalation rules)
-  - agent definitions (`*.agent.md`)
+  - agent definitions (`*.agent.md`):
+    - `research.agent.md` – call-hierarchy driven code analysis, impact assessment, migration audits
+    - `filter-api.agent.md` – Filter API replacement assistant (filter suggestion, field visibility debug, MySQL diagnostics, MCP chat notification)
 - `.github/docs/`
-  - per-agent guides (`*.guide.md`)
+  - per-agent guides (`*.guide.md`):
+    - `research.guide.md` – example queries and tips for the research agent
+    - `filter-api.guide.md` – example queries, credential setup, and MCP configuration for the Filter API agent
 - `.github/knowledge/`
   - shared knowledge files loaded by all agents:
     - `common-knowledge.md` – architecture principles, security baseline, evidence rules
     - `platform-knowledge.md` – runtime, framework, infrastructure, integration points
     - `module-knowledge.md` – module inventory, dependency map, inter-module contracts
     - `field-knowledge.md` – domain glossary, business rules, data field definitions
+    - `filter-knowledge.md` – Filter API field properties, operators, diagnostic query templates, and MCP integration contract
 - `.github/templates/`
-  - input templates (`*-input-template.md`) – one per analysis type plus a generic fallback
+  - input templates (`*-input-template.md`) – one per analysis type plus a generic fallback:
+    - `research-input-template.md` – generic fallback
+    - `code-base-audit-input-template.md`
+    - `new-feature-analysis-input-template.md`
+    - `feature-enhancement-input-template.md`
+    - `usecase-alignment-input-template.md`
+    - `filter-api-input-template.md` – Filter API suggestion, field visibility debug, field listing
 	- execution-step templates – default workflow source for agents that externalize workflow
-  - report templates (`*-report-template.md`)
+  - report templates (`*-report-template.md`):
+    - `code-base-audit-report-template.md`
+    - `new-feature-analysis-report-template.md`
+    - `feature-enhancement-report-template.md`
+    - `usecase-alignment-report-template.md`
+    - `filter-api-report-template.md` – Filter API agent report output
 
 ## Add a New Agent
 
@@ -81,6 +97,7 @@ Menu names differ by IDE version/plugin. Use the steps below as a practical chec
 3. Open GitHub Copilot settings.
 4. Add/register the agent instruction file path, for example:
 	- `agents/.github/agents/research.agent.md`
+	- `agents/.github/agents/filter-api.agent.md`
 5. Confirm referenced templates and knowledge files are accessible from the same workspace:
 	- `agents/.github/templates/*.md`
 	- `agents/.github/knowledge/*.md`
