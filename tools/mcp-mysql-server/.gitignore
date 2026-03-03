@@ -1,0 +1,13 @@
+# Ignore the filled-in .env file (template is intentionally tracked).
+.env.local
+.env.*.local
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/

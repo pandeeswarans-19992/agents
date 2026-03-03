@@ -16,7 +16,7 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 ## Repository Layout
 
 - `.github/agents/`
-  - `base.agent.md` – shared base contract (knowledge lens, governance, escalation rules)
+  - `base.agent.md` – shared base contract (knowledge lens, governance, escalation rules, tool auto-install protocol)
   - agent definitions (`*.agent.md`):
     - `research.agent.md` – call-hierarchy driven code analysis, impact assessment, migration audits
     - `field-filter-api-assistant.agent.md` – Filter API assistant (filter suggestion, field visibility debug, MySQL diagnostics, MCP escalation for unresolved queries)
@@ -45,6 +45,9 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
     - `new-feature-analysis-report-template.md`
     - `feature-enhancement-report-template.md`
     - `usecase-alignment-report-template.md`
+- `tools/`
+  - custom MCP tool servers – one subdirectory per server:
+    - `mcp-mysql-server/` – MCP server exposing `execute_mysql_query` (read-only MySQL SELECT)
 
 ## Add a New Agent
 
@@ -57,10 +60,30 @@ Detailed per-agent usage guidance lives in [.github/docs](.github/docs).
 4. Add or reuse output templates for the agent:
 	- `.github/templates/<type>-report-template.md`
 5. define deep execution steps directly inside the agent file
-6. Load the base agent contract (knowledge lens, governance, escalation rules) at the start of the agent file:
+6. Load the base agent contract (knowledge lens, governance, escalation rules, tool auto-install protocol) at the start of the agent file:
 	- `.github/agents/base.agent.md`
 7. Add template mappings inside the agent file.
 8. Run one dry execution and verify evidence + output sections.
+
+## Add a New Tool Server
+
+Each custom tool lives under `tools/<server-name>/` and follows the structure of
+`tools/mcp-mysql-server/` as the reference implementation.
+
+1. Create the server directory:
+	- `tools/<server-name>/`
+2. Add the required files:
+	- `server.py` – MCP server entry point; expose tools using `FastMCP`.
+	- `query_validator.py` (or equivalent) – input validation before execution.
+	- `requirements.txt` – Python dependencies.
+	- `package.json` – Server metadata, `start` and `install-deps` npm scripts, and `mcp` config block.
+	- `README.md` – Setup instructions, tool list, and safety constraints.
+	- `.env` – Credential/config template (tracked; real values must never be committed).
+	- `.gitignore` – Exclude `.env.local`, `__pycache__`, and compiled files.
+3. Register the new tool in the base agent contract:
+	- `.github/agents/base.agent.md` → **Tool Availability and Auto-Install Protocol** table.
+4. List the tool in any agent that needs it (front-matter `tools:` array).
+5. Add auto-install steps to agents with terminal access; add the manual-install guidance to agents without terminal access.
 
 ## Use This Repo in Existing Projects
 
