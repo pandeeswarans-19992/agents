@@ -18,7 +18,33 @@ Load and apply the base agent contract before executing any analysis:
 - `.github/agents/base.agent.md`
 
 This file defines the shared knowledge lens, escalation rules, output contract,
-governance rules, and determinism checklist that apply to all agents.
+tool availability and auto-install protocol, governance rules, and determinism
+checklist that apply to all agents.
+
+### 0.1 Tool Installation (Research Agent)
+
+This agent has terminal access (`run_in_terminal`, `get_terminal_output`) and
+**must actively install missing tools** following the auto-install protocol in
+`.github/agents/base.agent.md`.
+
+When `execute_mysql_query` is unavailable:
+
+1. Run in terminal:
+   ```
+   pip install -r tools/mcp-mysql-server/requirements.txt
+   ```
+2. Confirm success via `get_terminal_output`.
+3. Start the server in the background:
+   ```
+   python tools/mcp-mysql-server/server.py &
+   ```
+4. Verify required credentials are present in the environment; prompt the user
+   for any missing variable before retrying the query.
+5. Re-attempt the `execute_mysql_query` call.
+
+Do not proceed with database-level diagnostics if installation fails.
+
+---
 
 ### 1. Mission
 

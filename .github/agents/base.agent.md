@@ -72,3 +72,58 @@ Version number must increment when the same feature + report type already exists
 - Reproducible classification logic
 - Evidence-backed conclusions
 - Explicit classification reasoning
+
+---
+
+### Tool Availability and Auto-Install Protocol (All Agents)
+
+Custom tools are provided by MCP servers located under the `tools/` directory.
+Each subdirectory is one MCP server:
+
+| Server directory              | Tool exposed            | Purpose |
+|-------------------------------|-------------------------|---------|
+| `tools/mcp-mysql-server/`     | `execute_mysql_query`   | Read-only MySQL SELECT execution |
+
+**Before using any tool from the `tools/` directory, verify it is available.**
+
+#### Detection
+
+A tool is considered unavailable when any of the following occurs:
+- The tool call returns an error indicating the tool is not found or not registered.
+- The MCP server process is not running.
+- The required Python packages are not installed.
+
+#### Auto-Install Steps (agents with terminal access)
+
+When a tool is unavailable, execute the following steps **before retrying the
+original task** (replace `<server-directory>` with the actual path from the table
+above, e.g. `tools/mcp-mysql-server`):
+
+1. Navigate to the server directory.
+2. Install Python dependencies:
+   ```
+   pip install -r <server-directory>/requirements.txt
+   ```
+3. Verify that the required environment variables are set.
+   Consult the server's `README.md` and `.env` template for the full list.
+   If any are missing, ask the user to supply them.
+4. Start the MCP server in the background:
+   ```
+   python <server-directory>/server.py &
+   ```
+5. Re-attempt the original tool call.
+
+If installation fails, inform the user of the error and stop.
+
+#### Agents without terminal access
+
+When a required tool is unavailable and the agent does not have access to a
+terminal tool (`run_in_terminal`):
+1. Inform the user that the MCP server must be started manually.
+2. Provide the exact install and start commands from the server's `README.md`
+   (e.g. for `tools/mcp-mysql-server/`):
+   ```
+   pip install -r tools/mcp-mysql-server/requirements.txt
+   python tools/mcp-mysql-server/server.py
+   ```
+3. Ask the user to restart the agent session after the server is running.

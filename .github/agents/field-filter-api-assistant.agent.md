@@ -21,9 +21,24 @@ Load and apply the base agent contract before executing any task:
 - `.github/agents/base.agent.md`
 
 This file defines the shared knowledge lens, escalation rules, output contract,
-governance rules, and determinism checklist that apply to all agents.
+tool availability and auto-install protocol, governance rules, and determinism
+checklist that apply to all agents.
 
-### 0.1 Additional Knowledge Files
+### 0.1 Tool Availability (Field Filter API Assistant)
+
+This agent **does not have terminal access** and cannot install tools directly.
+
+When `execute_mysql_query` is unavailable, follow the "Agents without terminal
+access" path defined in the base contract:
+1. Inform the user that the MCP MySQL server must be started manually.
+2. Provide the exact commands:
+   ```
+   pip install -r tools/mcp-mysql-server/requirements.txt
+   python tools/mcp-mysql-server/server.py
+   ```
+3. Ask the user to restart the agent session once the server is running.
+
+### 0.2 Additional Knowledge Files
 
 Load these files in addition to the base contract knowledge lens:
 - `.github/knowledge/filter-knowledge.md` — Field Filter API introduction, Java predicate
